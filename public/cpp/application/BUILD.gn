@@ -53,6 +53,9 @@ mojo_sdk_source_set("test_support") {
 
   deps = [
     ":application",
+  ]
+
+  public_deps = [
     "//third_party/gtest",
   ]
 

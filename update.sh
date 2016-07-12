@@ -5,7 +5,7 @@
 
 set -e
 
-readonly SCRIPT_ROOT="$(cd $(dirname ${BASH_SOURCE[0]} ) && pwd)"
+readonly SCRIPT_ROOT="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
 
 case "$(uname -s)" in
   Darwin)
@@ -21,16 +21,34 @@ case "$(uname -s)" in
     ;;
 esac
 
-readonly MOJOM_PATH="${SCRIPT_ROOT}/public/tools/bindings/mojom_tool/bin/${HOST_PLATFORM}/mojom"
-readonly MOJOM_STAMP_PATH="${MOJOM_PATH}.stamp"
-readonly MOJOM_HASH="$(cat "${MOJOM_PATH}.sha1")"
-readonly MOJOM_BUCKET="mojo/mojom_parser/${HOST_PLATFORM}"
-readonly MOJOM_URL="https://storage.googleapis.com/${MOJOM_BUCKET}/${MOJOM_HASH}"
+function download_tool() {
+  local name="${1}"
+  local tool_path="${SCRIPT_ROOT}/${2}"
+  local bucket="${3}"
+  local stamp_path="${tool_path}.stamp"
+  local requested_hash="$(cat "${tool_path}.sha1")"
+  local tool_url="https://storage.googleapis.com/${bucket}/${requested_hash}"
 
-if [[ ! -f "${MOJOM_STAMP_PATH}" ]] || [[ "${MOJOM_HASH}" != "$(cat "${MOJOM_STAMP_PATH}")" ]]; then
-  echo "Downloading mojom..."
-  rm -f -- "${MOJOM_PATH}"
-  curl --progress-bar -continue-at=- --location --output "${MOJOM_PATH}" "${MOJOM_URL}"
-  chmod a+x "${MOJOM_PATH}"
-  echo "${MOJOM_HASH}" > "${MOJOM_STAMP_PATH}"
-fi
+  if [[ ! -f "${stamp_path}" || "${requested_hash}" != "$(cat "${stamp_path}")" ]]; then
+    echo "Downloading ${name}..."
+    rm -f -- "${tool_path}"
+    curl --progress-bar -continue-at=- --location --output "${tool_path}" "${tool_url}"
+    chmod +x "${tool_path}"
+    echo "${requested_hash}" > "${stamp_path}"
+  fi
+}
+
+download_tool \
+  "mojom compiler" \
+  "public/tools/bindings/mojom_tool/bin/${HOST_PLATFORM}/mojom" \
+  "mojo/mojom_parser/${HOST_PLATFORM}"
+
+download_tool \
+  "mojom c generator" \
+  "public/tools/bindings/mojom_tool/bin/${HOST_PLATFORM}/generators/c" \
+  "mojo/mojom_parser/${HOST_PLATFORM}/generators"
+
+download_tool \
+  "mojom deps generator" \
+  "public/tools/bindings/mojom_tool/bin/${HOST_PLATFORM}/generators/deps" \
+  "mojo/mojom_parser/${HOST_PLATFORM}/generators"

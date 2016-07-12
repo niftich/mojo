@@ -3,10 +3,13 @@
 // found in the LICENSE file.
 
 #include <assert.h>
+#include <magenta/processargs.h>
 #include <magenta/syscalls.h>
+#include <runtime/process.h>
 #include <string.h>
 
 #include "mojo/public/c/system/handle.h"
+#include "mojo/public/c/system/main.h"
 #include "mojo/public/c/system/message_pipe.h"
 #include "mojo/public/c/system/wait.h"
 
@@ -258,3 +261,7 @@ MojoResult MojoReadMessage(MojoHandle message_pipe_handle,
 // wait_set.h ------------------------------------------------------------------
 
 // TODO(abarth): Not implemented.
+
+int main(int argc, char** argv) {
+  return MojoMain(mxr_process_get_handle(MX_HND_TYPE_MOJO_SHELL));
+}

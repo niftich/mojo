@@ -6,6 +6,7 @@ group("mojo") {
   testonly = true
 
   deps = [
+    "//mojo/examples/hello_mojo",
     "//mojo/system",
   ]
 }

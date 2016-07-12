@@ -94,7 +94,8 @@ template("mojo_sdk_source_set") {
           # The only deps that are not specified relative to the location of
           # the Mojo SDK should be on targets within the same file or on a
           # whitelisted set of external dependencies.
-          assert(get_path_info(dep, "dir") == ".")
+          dep_dir = get_path_info(dep, "dir")
+          assert(dep_dir == "." || dep == "//third_party/gtest")
         }
         public_deps += [ dep ]
       }
