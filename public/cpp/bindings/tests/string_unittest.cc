@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include "mojo/public/cpp/bindings/string.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/gtest/include/gtest/gtest.h"
 
 namespace mojo {
 namespace test {

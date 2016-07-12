@@ -6,7 +6,7 @@
 // only headers from mojo/public/c/system (and the C standard library), and not
 // using gtest.
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/gtest/include/gtest/gtest.h"
 
 // Defined in compile_unittest_pure_c.c.
 extern "C" const char* MinimalCTest(void);

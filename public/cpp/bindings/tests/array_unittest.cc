@@ -10,7 +10,7 @@
 #include "mojo/public/cpp/bindings/tests/iterator_test_util.h"
 #include "mojo/public/interfaces/bindings/tests/test_arrays.mojom.h"
 #include "mojo/public/interfaces/bindings/tests/test_structs.mojom.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/gtest/include/gtest/gtest.h"
 
 namespace mojo {
 namespace test {

@@ -8,7 +8,7 @@
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "mojo/public/interfaces/bindings/tests/rect.mojom.h"
 #include "mojo/public/interfaces/bindings/tests/test_structs.mojom.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/gtest/include/gtest/gtest.h"
 
 namespace mojo {
 namespace test {

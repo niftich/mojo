@@ -7,7 +7,7 @@
 #include "mojo/public/cpp/bindings/lib/iterator_util.h"
 #include "mojo/public/cpp/bindings/map.h"
 #include "mojo/public/cpp/bindings/tests/iterator_test_util.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/gtest/include/gtest/gtest.h"
 
 namespace mojo {
 namespace test {

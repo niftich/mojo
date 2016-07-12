@@ -12,7 +12,7 @@ mojo_sdk_source_set("tests") {
   ]
 
   deps = [
-    "//testing/gtest",
+    "//third_party/gtest",
   ]
 
   mojo_sdk_deps = [

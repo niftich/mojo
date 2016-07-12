@@ -24,7 +24,7 @@ mojo_sdk_source_set("tests") {
 
   deps = [
     ":pure_tests",
-    "//testing/gtest",
+    "//third_party/gtest",
   ]
 
   mojo_sdk_deps = [
@@ -66,7 +66,7 @@ mojo_sdk_source_set("perftests") {
   ]
 
   deps = [
-    "//testing/gtest",
+    "//third_party/gtest",
   ]
 
   mojo_sdk_deps = [

@@ -514,47 +514,4 @@ template("mojom") {
       }
     }
   }
-
-  if (is_android) {
-    import("//build/config/android/rules.gni")
-
-    java_srcjar_target_name = target_name + "_java_sources"
-    action(java_srcjar_target_name) {
-      script = rebase_path("mojo/public/tools/gn/zip.py", ".", mojo_root)
-      inputs = process_file_template(invoker.sources, generator_java_outputs)
-      output = "$target_gen_dir/$target_name.srcjar"
-      outputs = [
-        output,
-      ]
-      rebase_inputs = rebase_path(inputs, root_build_dir)
-      rebase_output = rebase_path(output, root_build_dir)
-      args = [
-        "--zip-inputs=$rebase_inputs",
-        "--output=$rebase_output",
-      ]
-      deps = [
-        ":$generator_target_name",
-      ]
-    }
-
-    java_target_name = target_name + "_java"
-    android_library(java_target_name) {
-      deps = rebase_path([
-                           "mojo/public/java:bindings",
-                           "mojo/public/java:system",
-                         ],
-                         ".",
-                         mojo_root)
-
-      foreach(d, all_deps) {
-        # Resolve the name, so that a target //mojo/something becomes
-        # //mojo/something:something and we can append "_java" to get the java
-        # dependency name.
-        full_name = get_label_info(d, "label_no_toolchain")
-        deps += [ "${full_name}_java" ]
-      }
-
-      srcjar_deps = [ ":$java_srcjar_target_name" ]
-    }
-  }
 }

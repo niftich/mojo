@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "mojo/public/interfaces/bindings/tests/sample_interfaces.mojom.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/gtest/include/gtest/gtest.h"
 
 using sample::SampleInterface;
 using sample::SampleInterface_SampleMethod1_Params;

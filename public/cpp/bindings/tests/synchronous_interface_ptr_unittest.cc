@@ -16,7 +16,7 @@
 #include "mojo/public/interfaces/bindings/tests/math_calculator.mojom.h"
 #include "mojo/public/interfaces/bindings/tests/scoping.mojom-sync.h"
 #include "mojo/public/interfaces/bindings/tests/scoping.mojom.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/gtest/include/gtest/gtest.h"
 
 namespace mojo {
 namespace test {

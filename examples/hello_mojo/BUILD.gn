@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//mojo/public/mojo_application.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 
 group("hello_mojo") {
@@ -12,7 +11,7 @@ group("hello_mojo") {
   ]
 }
 
-mojo_native_application("hello_mojo_client") {
+executable("hello_mojo_client") {
   deps = [
     ":hello_mojo_interface",
     "//mojo/public/c/system",
@@ -20,6 +19,7 @@ mojo_native_application("hello_mojo_client") {
     "//mojo/public/cpp/bindings",
     "//mojo/public/cpp/system",
     "//mojo/public/cpp/utility",
+    "//mojo/system",
   ]
 
   sources = [
@@ -27,7 +27,7 @@ mojo_native_application("hello_mojo_client") {
   ]
 }
 
-mojo_native_application("hello_mojo_server") {
+executable("hello_mojo_server") {
   deps = [
     ":hello_mojo_interface",
     "//mojo/public/c/system",
@@ -35,6 +35,7 @@ mojo_native_application("hello_mojo_server") {
     "//mojo/public/cpp/bindings",
     "//mojo/public/cpp/system",
     "//mojo/public/cpp/utility",
+    "//mojo/system",
   ]
 
   sources = [

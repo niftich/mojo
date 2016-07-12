@@ -45,7 +45,7 @@ mojo_sdk_source_set("tests") {
 
   deps = [
     ":mojo_public_bindings_test_utils",
-    "//testing/gtest",
+    "//third_party/gtest",
   ]
 
   mojo_sdk_deps = [
@@ -69,7 +69,7 @@ mojo_sdk_source_set("perftests") {
   ]
 
   deps = [
-    "//testing/gtest",
+    "//third_party/gtest",
   ]
 
   mojo_sdk_deps = [

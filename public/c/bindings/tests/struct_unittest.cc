@@ -13,7 +13,7 @@
 #include "mojo/public/interfaces/bindings/tests/rect.mojom-c.h"
 #include "mojo/public/interfaces/bindings/tests/test_structs.mojom-c.h"
 #include "mojo/public/interfaces/bindings/tests/test_unions.mojom-c.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/gtest/include/gtest/gtest.h"
 
 namespace {
 
