@@ -25,92 +25,36 @@ static mx_time_t MojoDeadlineToTime(MojoDeadline deadline) {
   return (mx_time_t) deadline * 1000u;
 }
 
-// TODO(jamesr): Unify error codes.
-static MojoResult StatusToMojoResult(mx_status_t err) {
-  switch (err) {
+// handle.h --------------------------------------------------------------------
+
+MojoResult MojoClose(MojoHandle handle) {
+  mx_status_t status = mx_handle_close(handle);
+  switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;
-    case ERR_INTERNAL:
-      return MOJO_RESULT_INTERNAL;
-    case ERR_NOT_FOUND:
-      return MOJO_RESULT_NOT_FOUND;
-    case ERR_NOT_READY:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_NO_MEMORY:
-      return MOJO_RESULT_RESOURCE_EXHAUSTED;
-    case ERR_ALREADY_STARTED:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_NOT_VALID:
-      return MOJO_RESULT_INVALID_ARGUMENT;
     case ERR_INVALID_ARGS:
       return MOJO_RESULT_INVALID_ARGUMENT;
-    case ERR_NOT_ENOUGH_BUFFER:
-      return MOJO_RESULT_RESOURCE_EXHAUSTED;
-    case ERR_NOT_BLOCKED:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_TIMED_OUT:
-      return MOJO_RESULT_DEADLINE_EXCEEDED;
-    case ERR_ALREADY_EXISTS:
-      return MOJO_RESULT_ALREADY_EXISTS;
-    case ERR_CHANNEL_CLOSED:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_NOT_ALLOWED:
-      return MOJO_RESULT_PERMISSION_DENIED;
-    case ERR_BAD_PATH:
-      return MOJO_RESULT_INVALID_ARGUMENT;
-    case ERR_IO:
-      return MOJO_RESULT_INTERNAL;
-    case ERR_NOT_DIR:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_NOT_FILE:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_RECURSE_TOO_DEEP:
-      return MOJO_RESULT_INTERNAL;
-    case ERR_NOT_SUPPORTED:
-      return MOJO_RESULT_UNIMPLEMENTED;
-    case ERR_TOO_BIG:
-      return MOJO_RESULT_OUT_OF_RANGE;
-    case ERR_CANCELLED:
-      return MOJO_RESULT_ABORTED;
-    case ERR_NOT_IMPLEMENTED:
-      return MOJO_RESULT_UNIMPLEMENTED;
-    case ERR_CHECKSUM_FAIL:
-      return MOJO_RESULT_DATA_LOSS;
-    case ERR_BAD_STATE:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_BUSY:
-      return MOJO_RESULT_BUSY;
-    case ERR_THREAD_DETACHED:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_I2C_NACK:
-      return MOJO_RESULT_DATA_LOSS;
-    case ERR_OUT_OF_RANGE:
-      return MOJO_RESULT_OUT_OF_RANGE;
-    case ERR_NOT_MOUNTED:
-      return MOJO_RESULT_FAILED_PRECONDITION;
-    case ERR_FAULT:
-      return MOJO_RESULT_INTERNAL;
-    case ERR_NO_RESOURCES:
-      return MOJO_RESULT_RESOURCE_EXHAUSTED;
-    case ERR_BAD_HANDLE:
-      return MOJO_RESULT_INTERNAL;
-    case ERR_ACCESS_DENIED:
-      return MOJO_RESULT_PERMISSION_DENIED;
     default:
       return MOJO_RESULT_UNKNOWN;
   }
 }
 
-// handle.h --------------------------------------------------------------------
-
-MojoResult MojoClose(MojoHandle handle) {
-  return StatusToMojoResult(mx_handle_close(handle));
-}
-
 MojoResult MojoDuplicateHandle(MojoHandle handle, MojoHandle* new_handle) {
   mx_handle_t result = mx_handle_duplicate(handle, MX_RIGHT_SAME_RIGHTS);
-  if (result < 0)
-    return StatusToMojoResult(result);
+  if (result < 0) {
+    switch (result) {
+      case ERR_BAD_HANDLE:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_INVALID_ARGS:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_ACCESS_DENIED:
+        return MOJO_RESULT_PERMISSION_DENIED;
+      case ERR_NO_MEMORY:
+        return MOJO_RESULT_RESOURCE_EXHAUSTED;
+      default:
+        return MOJO_RESULT_UNKNOWN;
+    }
+  }
   *new_handle = result;
   return MOJO_RESULT_OK;
 }
@@ -146,29 +90,34 @@ MojoResult MojoWait(MojoHandle handle,
     satisfied_signals = (mx_signals_t*) &signals_state->satisfied_signals;
     satisfiable_signals = (mx_signals_t*) &signals_state->satisfiable_signals;
   }
-  return StatusToMojoResult(mx_handle_wait_one(
-      handle, signals, mx_deadline, satisfied_signals, satisfiable_signals));
+  mx_status_t status = mx_handle_wait_one(
+      handle, signals, mx_deadline, satisfied_signals, satisfiable_signals);
+  switch (status) {
+    case NO_ERROR:
+      return MOJO_RESULT_OK;
+    case ERR_TIMED_OUT:
+      return MOJO_RESULT_DEADLINE_EXCEEDED;
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
+    default:
+      return MOJO_RESULT_UNKNOWN;
+  }
 }
 
-static mx_status_t WaitManyWithSignalsState(
-    uint32_t num_handles,
-    mx_handle_t* handles,
-    mx_signals_t* signals,
-    mx_time_t deadline,
-    struct MojoHandleSignalsState* signals_states) {
-  mx_signals_t satisfied_signals[num_handles];
-  mx_signals_t satisfiable_signals[num_handles];
-  mx_status_t status = mx_handle_wait_many(num_handles,
-                                           handles,
-                                           signals,
-                                           deadline,
-                                           satisfied_signals,
-                                           satisfiable_signals);
-  for (uint32_t i = 0; i < num_handles; ++i) {
-    signals_states[i].satisfied_signals = satisfied_signals[i];
-    signals_states[i].satisfiable_signals = satisfiable_signals[i];
+static void CopySignalsState(uint32_t num_handles,
+                             mx_signals_t* satisfied_signals,
+                             mx_signals_t* satisfiable_signals,
+                             struct MojoHandleSignalsState* signals_states) {
+  if (!signals_states)
+    return;
+  if (signals_states) {
+    for (uint32_t i = 0; i < num_handles; ++i) {
+      signals_states[i].satisfied_signals = satisfied_signals[i];
+      signals_states[i].satisfiable_signals = satisfiable_signals[i];
+    }
   }
-  return status;
 }
 
 MojoResult MojoWaitMany(const MojoHandle* handles,
@@ -180,22 +129,42 @@ MojoResult MojoWaitMany(const MojoHandle* handles,
   mx_handle_t* mx_handles = (mx_handle_t*)handles;
   mx_signals_t* mx_signals = (mx_signals_t*)signals;
   mx_time_t mx_deadline = MojoDeadlineToTime(deadline);
+  mx_signals_t satisfied_signals[num_handles];
+  mx_signals_t satisfiable_signals[num_handles];
 
-  mx_status_t status;
-  if (signals_states) {
-    status = WaitManyWithSignalsState(num_handles, mx_handles, mx_signals,
-                                      mx_deadline, signals_states);
-  } else {
-    status = mx_handle_wait_many(num_handles, mx_handles, mx_signals,
-                                 mx_deadline, NULL, NULL);
+  mx_status_t status = mx_handle_wait_many(num_handles,
+                                           mx_handles,
+                                           mx_signals,
+                                           mx_deadline,
+                                           satisfied_signals,
+                                           satisfiable_signals);
+
+  switch (status) {
+    case NO_ERROR:
+      if (result_index) {
+        for (uint32_t i = 0; i < num_handles; ++i) {
+          if (satisfied_signals[i] & signals[i]) {
+            *result_index = i;
+            break;
+          }
+        }
+      }
+      CopySignalsState(num_handles, satisfied_signals, satisfiable_signals,
+                       signals_states);
+      return MOJO_RESULT_OK;
+    case ERR_TIMED_OUT:
+      CopySignalsState(num_handles, satisfied_signals, satisfiable_signals,
+                       signals_states);
+      return MOJO_RESULT_DEADLINE_EXCEEDED;
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
+    case ERR_NO_MEMORY:
+      return MOJO_RESULT_RESOURCE_EXHAUSTED;
+    default:
+      return MOJO_RESULT_UNKNOWN;
   }
-
-  if (result_index) {
-    // TODO(cpu): implement |result_index|, see MG-33 bug.
-    *result_index = 0;
-  }
-
-  return StatusToMojoResult(status);
 }
 
 // message_pipe.h --------------------------------------------------------------
@@ -208,8 +177,16 @@ MojoResult MojoCreateMessagePipe(
     return MOJO_RESULT_INVALID_ARGUMENT;
   mx_handle_t mx_handles[2];
   mx_status_t status = mx_message_pipe_create(mx_handles, 0);
-  if (status != NO_ERROR)
-    return StatusToMojoResult(status);
+  if (status != NO_ERROR) {
+    switch (status) {
+      case ERR_INVALID_ARGS:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_NO_MEMORY:
+        return MOJO_RESULT_RESOURCE_EXHAUSTED;
+      default:
+        return MOJO_RESULT_UNKNOWN;
+    }
+  }
   *message_pipe_handle0 = mx_handles[0];
   *message_pipe_handle1 = mx_handles[1];
   return MOJO_RESULT_OK;
@@ -223,12 +200,29 @@ MojoResult MojoWriteMessage(MojoHandle message_pipe_handle,
                             MojoWriteMessageFlags flags) {
   mx_handle_t* mx_handles = (mx_handle_t*) handles;
   // TODO(abarth): Handle messages that are too big to fit.
-  return StatusToMojoResult(mx_message_write(message_pipe_handle,
-                                             bytes,
-                                             num_bytes,
-                                             mx_handles,
-                                             num_handles,
-                                             flags));
+  mx_status_t status = mx_message_write(message_pipe_handle,
+                                        bytes,
+                                        num_bytes,
+                                        mx_handles,
+                                        num_handles,
+                                        flags);
+  switch (status) {
+    case NO_ERROR:
+      return MOJO_RESULT_OK;
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
+    case ERR_BAD_STATE:
+      // Notice the different semantics than mx_message_read.
+      return MOJO_RESULT_FAILED_PRECONDITION;
+    case ERR_NO_MEMORY:
+      return MOJO_RESULT_RESOURCE_EXHAUSTED;
+    case ERR_TOO_BIG:
+      // TODO(abarth): Handle messages that are too big to fit.
+    default:
+      return MOJO_RESULT_UNKNOWN;
+  }
 }
 
 MojoResult MojoReadMessage(MojoHandle message_pipe_handle,
@@ -239,12 +233,32 @@ MojoResult MojoReadMessage(MojoHandle message_pipe_handle,
                            MojoReadMessageFlags flags) {
   mx_handle_t* mx_handles = (mx_handle_t*) handles;
   // TODO(abarth): Handle messages that were too big to fit.
-  return StatusToMojoResult(mx_message_read(message_pipe_handle,
-                                            bytes,
-                                            num_bytes,
-                                            mx_handles,
-                                            num_handles,
-                                            flags));
+  mx_status_t status = mx_message_read(message_pipe_handle,
+                                       bytes,
+                                       num_bytes,
+                                       mx_handles,
+                                       num_handles,
+                                       flags);
+  switch (status) {
+    case NO_ERROR:
+      return MOJO_RESULT_OK;
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
+    case ERR_BAD_STATE:
+      // Notice the different semantics than mx_message_write.
+      return MOJO_RESULT_SHOULD_WAIT;
+    case ERR_CHANNEL_CLOSED:
+      return MOJO_RESULT_FAILED_PRECONDITION;
+    case ERR_NO_MEMORY:
+      // Notice the collision with ERR_NOT_ENOUGH_BUFFER.
+      return MOJO_RESULT_RESOURCE_EXHAUSTED;
+    case ERR_NOT_ENOUGH_BUFFER:
+      return MOJO_RESULT_RESOURCE_EXHAUSTED;
+    default:
+      return MOJO_RESULT_UNKNOWN;
+  }
 }
 
 // data_pipe.h -----------------------------------------------------------------
