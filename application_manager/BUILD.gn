@@ -1,0 +1,33 @@
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+executable("application_manager") {
+  sources = [
+    "application_connector_impl.cc",
+    "application_connector_impl.h",
+    "application_instance.cc",
+    "application_instance.h",
+    "application_launcher.cc",
+    "application_launcher.h",
+    "application_manager.cc",
+    "application_manager.h",
+    "application_table.cc",
+    "application_table.h",
+    "main.cc",
+    "shell_impl.cc",
+    "shell_impl.h",
+  ]
+
+  deps = [
+    "//mojo/public/cpp/bindings",
+    "//mojo/public/cpp/environment:standalone",
+    "//mojo/public/cpp/system",
+    "//mojo/public/cpp/utility",
+    "//mojo/public/interfaces/application",
+    "//mojo/system:impl",
+    # TODO(abarth): Move ftl and mtl out of escher once we create the ftl repo.
+    "//escher/ftl",
+    "//escher/mtl",
+  ]
+}

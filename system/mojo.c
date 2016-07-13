@@ -3,13 +3,10 @@
 // found in the LICENSE file.
 
 #include <assert.h>
-#include <magenta/processargs.h>
 #include <magenta/syscalls.h>
-#include <runtime/process.h>
 #include <string.h>
 
 #include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/main.h"
 #include "mojo/public/c/system/message_pipe.h"
 #include "mojo/public/c/system/wait.h"
 
@@ -209,12 +206,12 @@ MojoResult MojoCreateMessagePipe(
     MojoHandle* message_pipe_handle1) {
   if (options && options->flags != MOJO_CREATE_MESSAGE_PIPE_OPTIONS_FLAG_NONE)
     return MOJO_RESULT_INVALID_ARGUMENT;
-  mx_handle_t mx_handle1;
-  mx_handle_t mx_handle0 = mx_message_pipe_create(&mx_handle1);
-  if (mx_handle0 < 0)
-    return StatusToMojoResult(mx_handle0);
-  *message_pipe_handle0 = mx_handle0;
-  *message_pipe_handle1 = mx_handle1;
+  mx_handle_t mx_handles[2];
+  mx_status_t status = mx_message_pipe_create(mx_handles, 0);
+  if (status != NO_ERROR)
+    return StatusToMojoResult(status);
+  *message_pipe_handle0 = mx_handles[0];
+  *message_pipe_handle1 = mx_handles[1];
   return MOJO_RESULT_OK;
 }
 
@@ -261,7 +258,3 @@ MojoResult MojoReadMessage(MojoHandle message_pipe_handle,
 // wait_set.h ------------------------------------------------------------------
 
 // TODO(abarth): Not implemented.
-
-int main(int argc, char** argv) {
-  return MojoMain(mxr_process_get_handle(MX_HND_TYPE_MOJO_SHELL));
-}

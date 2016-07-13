@@ -54,6 +54,7 @@ mojo_sdk_source_set("serialization") {
 mojo_sdk_source_set("bindings") {
   sources = [
     "binding.h",
+    "binding_set.h",
     "interface_handle.h",
     "interface_ptr.h",
     "interface_request.h",

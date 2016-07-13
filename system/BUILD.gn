@@ -2,15 +2,20 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+source_set("impl") {
+  sources = [
+    "mojo.c",
+  ]
+}
+
 static_library("system") {
   output_name = "mojo"
 
-  # TODO(abarth): Move this into //build
-  include_dirs = [
-    "//",
+  sources = [
+    "main.c",
   ]
 
-  sources = [
-    "mojo.c",
+  deps = [
+    ":impl"
   ]
 }
