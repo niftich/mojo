@@ -8,5 +8,5 @@
 #include "mojo/public/c/system/main.h"
 
 int main(int argc, char** argv) {
-  return MojoMain(mxr_process_get_handle(MX_HND_TYPE_MOJO_SHELL));
+  return MojoMain(mxr_process_get_handle(MX_HND_TYPE_APPLICATION_REQUEST));
 }

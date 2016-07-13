@@ -53,7 +53,7 @@ mtl::UniqueHandle LaunchApplication(
   size_t index = CloneStdStreams(child_handles, ids);
   mojo::Handle initial_handle = application_request.PassMessagePipe().release();
   child_handles[index] = static_cast<mx_handle_t>(initial_handle.value());
-  ids[index] = MX_HND_TYPE_MOJO_SHELL;
+  ids[index] = MX_HND_TYPE_APPLICATION_REQUEST;
   ++index;
 
   const char* path_arg = path.c_str();
