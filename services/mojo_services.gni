@@ -1,0 +1,15 @@
+# Copyright 2014 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# This list is used to populate the Dart mojo_services package. It must be
+# updated to contain the public interfaces under //mojo/services. If you add a
+# new directory, X, containing public interfaces, then you must add
+# //mojo/services/X/public/interfaces to this list.
+
+mojo_services = [
+  "//mojo/services/asset_bundle/interfaces",
+  "//mojo/services/content_handler/interfaces",
+  "//mojo/services/geometry/interfaces",
+  "//mojo/services/tracing/interfaces",
+]

@@ -10,6 +10,7 @@ group("mojo") {
     "//mojo/examples/echo",
     "//mojo/examples/hello_mojo",
     "//mojo/examples/tiny",
+    "//mojo/services",
     "//mojo/system",
   ]
 }
