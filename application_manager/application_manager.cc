@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ftl/logging.h"
-#include "ftl/memory/make_unique.h"
+#include "lib/ftl/logging.h"
+#include "lib/ftl/memory/make_unique.h"
 #include "mojo/application_manager/application_instance.h"
 #include "mojo/application_manager/shell_impl.h"
 

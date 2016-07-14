@@ -5,7 +5,7 @@
 #ifndef MOJO_APPLICATION_MANAGER_APPLICATION_CONNECTOR_IMPL_H_
 #define MOJO_APPLICATION_MANAGER_APPLICATION_CONNECTOR_IMPL_H_
 
-#include "ftl/macros.h"
+#include "lib/ftl/macros.h"
 #include "mojo/public/cpp/bindings/binding_set.h"
 #include "mojo/public/interfaces/application/application_connector.mojom.h"
 

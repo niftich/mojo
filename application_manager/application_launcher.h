@@ -8,7 +8,7 @@
 #include <magenta/types.h>
 #include <string>
 
-#include "mtl/unique_handle.h"
+#include "lib/mtl/unique_handle.h"
 #include "mojo/public/interfaces/application/application.mojom.h"
 
 namespace mojo {

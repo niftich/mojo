@@ -6,7 +6,7 @@
 
 #include <utility>
 
-#include "ftl/memory/make_unique.h"
+#include "lib/ftl/memory/make_unique.h"
 
 namespace mojo {
 

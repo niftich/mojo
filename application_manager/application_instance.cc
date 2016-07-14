@@ -4,7 +4,7 @@
 
 #include "mojo/application_manager/application_instance.h"
 
-#include "ftl/logging.h"
+#include "lib/ftl/logging.h"
 #include "mojo/application_manager/application_launcher.h"
 #include "mojo/public/interfaces/application/shell.mojom.h"
 
