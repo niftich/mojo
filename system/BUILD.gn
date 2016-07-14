@@ -6,6 +6,10 @@ source_set("impl") {
   sources = [
     "mojo.c",
   ]
+
+  deps = [
+    "//mojo/public/c/system",
+  ]
 }
 
 static_library("system") {
@@ -16,6 +20,7 @@ static_library("system") {
   ]
 
   deps = [
-    ":impl"
+    ":impl",
+    "//mojo/public/c/system",
   ]
 }
