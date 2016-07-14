@@ -27,7 +27,7 @@ executable("application_manager") {
     "//mojo/public/interfaces/application",
     "//mojo/system:impl",
     # TODO(abarth): Move ftl and mtl out of escher once we create the ftl repo.
-    "//escher/ftl",
-    "//escher/mtl",
+    "//lib/escher/ftl",
+    "//lib/escher/mtl",
   ]
 }
