@@ -10,21 +10,23 @@
 #include <vector>
 
 #include "lib/mtl/unique_handle.h"
-#include "mojo/public/interfaces/application/application.mojom.h"
 #include "mojo/application_manager/shell_impl.h"
+#include "mojo/public/interfaces/application/application.mojom.h"
+#include "mojo/services/content_handler/interfaces/content_handler.mojom.h"
 
 namespace mojo {
+class ApplicationManager;
 
 class ApplicationInstance {
  public:
   ApplicationInstance();
   ~ApplicationInstance();
 
-  // Starts the application with the given name. Returns whether the process
+  // Starts the application with the given name. Returns whether the application
   // was created successfully. Does not send the initialization message.
   //
-  // To stop the process, destruct this object.
-  bool Start(const std::string& name);
+  // To stop the application, destroy this object.
+  bool Start(ApplicationManager* manager, const std::string& name);
 
   // Sends the initialize message to the application.
   //
@@ -36,6 +38,8 @@ class ApplicationInstance {
   void Initialize(std::unique_ptr<ShellImpl> shell,
                   mojo::Array<mojo::String> args,
                   const mojo::String& name);
+
+  mojo::ContentHandler* GetOrCreateContentHandler();
 
   mx_handle_t process() const { return process_.get(); }
   mojo::Application* application() const { return application_.get(); }
@@ -50,6 +54,7 @@ class ApplicationInstance {
  private:
   mtl::UniqueHandle process_;
   mojo::ApplicationPtr application_;
+  mojo::ContentHandlerPtr content_handler_;
   std::unique_ptr<ShellImpl> shell_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(ApplicationInstance);

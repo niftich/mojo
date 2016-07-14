@@ -20,22 +20,37 @@ ApplicationManager::~ApplicationManager() {}
 
 bool ApplicationManager::StartInitialApplication(std::string name) {
   FTL_DCHECK(table_.is_empty());
-  return GetOrStartApplication(std::move(name));
+  return GetOrStartApplicationInstance(std::move(name));
 }
 
 void ApplicationManager::ConnectToApplication(
     const std::string& application_name,
     const std::string& requestor_name,
     InterfaceRequest<ServiceProvider> services) {
-  Application* application = GetOrStartApplication(std::move(application_name));
-  if (!application)
+  ApplicationInstance* instance = GetOrStartApplicationInstance(
+      std::move(application_name));
+  if (!instance)
     return;
-  application->AcceptConnection(requestor_name, requestor_name,
-                                std::move(services));
+  instance->application()->AcceptConnection(requestor_name, requestor_name,
+                                            std::move(services));
 }
 
-Application* ApplicationManager::GetOrStartApplication(std::string name) {
-  ApplicationInstance* instance = table_.GetOrStartApplication(name);
+void ApplicationManager::StartApplicationUsingContentHandler(
+    const std::string& content_handler_name,
+    URLResponsePtr response,
+    InterfaceRequest<Application> application_request) {
+  ApplicationInstance* instance = GetOrStartApplicationInstance(
+      content_handler_name);
+  if (!instance)
+    return;
+  ContentHandler* content_handler = instance->GetOrCreateContentHandler();
+  content_handler->StartApplication(std::move(application_request),
+                                    std::move(response));
+}
+
+ApplicationInstance* ApplicationManager::GetOrStartApplicationInstance(
+    std::string name) {
+  ApplicationInstance* instance = table_.GetOrStartApplication(this, name);
   if (!instance) {
     fprintf(stderr, "error: Failed to start application %s", name.c_str());
     return nullptr;
@@ -46,7 +61,7 @@ Application* ApplicationManager::GetOrStartApplication(std::string name) {
       table_.StopApplication(instance->name());
     });
   }
-  return instance->application();
+  return instance;
 }
 
 }  // namespace mojo

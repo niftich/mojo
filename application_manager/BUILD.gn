@@ -27,6 +27,8 @@ executable("application_manager") {
     "//mojo/public/cpp/system",
     "//mojo/public/cpp/utility",
     "//mojo/public/interfaces/application",
+    "//mojo/public/interfaces/network",
+    "//mojo/services/content_handler/interfaces",
     "//mojo/system:impl",
   ]
 }

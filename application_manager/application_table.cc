@@ -14,12 +14,13 @@ ApplicationTable::ApplicationTable() {}
 
 ApplicationTable::~ApplicationTable() {}
 
-ApplicationInstance* ApplicationTable::GetOrStartApplication(std::string name) {
+ApplicationInstance* ApplicationTable::GetOrStartApplication(
+    ApplicationManager* manager, std::string name) {
   auto result = map_.emplace(std::move(name), nullptr);
   auto it = result.first;
   if (result.second) {
     auto application = ftl::MakeUnique<ApplicationInstance>();
-    if (!application->Start(it->first)) {
+    if (!application->Start(manager, it->first)) {
       map_.erase(it);
       return nullptr;
     }

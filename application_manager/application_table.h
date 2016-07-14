@@ -12,13 +12,15 @@
 #include "mojo/application_manager/application_instance.h"
 
 namespace mojo {
+class ApplicationManager;
 
 class ApplicationTable {
  public:
   ApplicationTable();
   ~ApplicationTable();
 
-  ApplicationInstance* GetOrStartApplication(std::string name);
+  ApplicationInstance* GetOrStartApplication(ApplicationManager* manager,
+                                             std::string name);
   void StopApplication(const std::string& name);
 
   bool is_empty() const { return map_.empty(); }

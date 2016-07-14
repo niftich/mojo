@@ -2,13 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-group("mojo") {
+group("examples") {
   testonly = true
 
   deps = [
-    "//mojo/application_manager",
-    "//mojo/examples",
-    "//mojo/services",
-    "//mojo/system",
+    "//mojo/examples/echo",
+    "//mojo/examples/hello_content_handler",
+    "//mojo/examples/hello_mojo",
+    "//mojo/examples/tiny",
   ]
 }

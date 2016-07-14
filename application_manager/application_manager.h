@@ -9,6 +9,7 @@
 
 #include "mojo/application_manager/application_table.h"
 #include "mojo/public/interfaces/application/service_provider.mojom.h"
+#include "mojo/public/interfaces/network/url_response.mojom.h"
 
 namespace mojo {
 
@@ -24,8 +25,13 @@ class ApplicationManager {
       const std::string& requestor_name,
       InterfaceRequest<ServiceProvider> services);
 
+  void StartApplicationUsingContentHandler(
+      const std::string& content_handler_name,
+      URLResponsePtr response,
+      InterfaceRequest<Application> application_request);
+
  private:
-  Application* GetOrStartApplication(std::string name);
+  ApplicationInstance* GetOrStartApplicationInstance(std::string name);
 
   ApplicationTable table_;
 
