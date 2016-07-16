@@ -26,8 +26,8 @@ class ApplicationTable {
   bool is_empty() const { return map_.empty(); }
 
  private:
-  using AppMap = std::unordered_map<std::string,
-                                    std::unique_ptr<ApplicationInstance>>;
+  using AppMap =
+      std::unordered_map<std::string, std::unique_ptr<ApplicationInstance>>;
 
   AppMap map_;
 

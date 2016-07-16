@@ -15,7 +15,8 @@ ApplicationTable::ApplicationTable() {}
 ApplicationTable::~ApplicationTable() {}
 
 ApplicationInstance* ApplicationTable::GetOrStartApplication(
-    ApplicationManager* manager, std::string name) {
+    ApplicationManager* manager,
+    std::string name) {
   auto result = map_.emplace(std::move(name), nullptr);
   auto it = result.first;
   if (result.second) {

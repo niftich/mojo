@@ -60,13 +60,13 @@ mojo::InterfaceRequest<mojo::Application> LaunchWithContentHandler(
   size_t newline = shebang.find('\n', kMojoMagicLength);
   if (newline == std::string::npos)
     return request;
-  std::string handler = shebang.substr(kMojoMagicLength,
-                                       newline - kMojoMagicLength);
+  std::string handler =
+      shebang.substr(kMojoMagicLength, newline - kMojoMagicLength);
   URLResponsePtr response = URLResponse::New();
   response->status_code = 200;
   // TODO(abarth): Fill in the data pipe.
-  manager->StartApplicationUsingContentHandler(
-      handler, std::move(response), std::move(request));
+  manager->StartApplicationUsingContentHandler(handler, std::move(response),
+                                               std::move(request));
   return nullptr;
 }
 
@@ -93,8 +93,8 @@ mtl::UniqueHandle LaunchWithProcess(
   const char* path_arg = path.c_str();
   // TODO(abarth): Remove const_cast once MG-185 is fixed.
   char** argv = const_cast<char**>(&path_arg);
-  return mtl::UniqueHandle(mxio_start_process_etc(
-      path_arg, 1, argv, index, child_handles, ids));
+  return mtl::UniqueHandle(
+      mxio_start_process_etc(path_arg, 1, argv, index, child_handles, ids));
 }
 
 }  // namespace

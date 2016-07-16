@@ -33,7 +33,8 @@ class ApplicationManager;
 // The second field of the return value is a handle to the process created by
 // this function, if the name resolved to a native executable.
 std::pair<bool, mtl::UniqueHandle> LaunchApplication(
-    ApplicationManager* manager, const std::string& name,
+    ApplicationManager* manager,
+    const std::string& name,
     mojo::InterfaceRequest<mojo::Application> application_request);
 
 }  // namespace mojo

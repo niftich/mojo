@@ -19,10 +19,12 @@ int main(int argc, char** argv) {
 
   mojo::RunLoop loop;
 
-  loop.PostDelayedTask([&]() {
-    if (!manager.StartInitialApplication(initial_app))
-      exit(1);
-  }, 0);
+  loop.PostDelayedTask(
+      [&]() {
+        if (!manager.StartInitialApplication(initial_app))
+          exit(1);
+      },
+      0);
 
   loop.Run();
   return 0;

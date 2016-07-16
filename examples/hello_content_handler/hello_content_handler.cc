@@ -35,7 +35,7 @@ class HelloApplication : public mojo::Application {
       const mojo::String& url,
       mojo::InterfaceRequest<mojo::ServiceProvider> services) override {
     printf("Connected to HelloApplication requestor_url=%s url=%s\n",
-        requestor_url.get().c_str(), url.get().c_str());
+           requestor_url.get().c_str(), url.get().c_str());
   }
 
   mojo::StrongBinding<mojo::Application> binding_;
@@ -48,7 +48,7 @@ class ContentHandlerImpl : public mojo::ContentHandler {
  public:
   explicit ContentHandlerImpl(
       mojo::InterfaceRequest<mojo::ContentHandler> request)
-    : binding_(this, request.Pass()) {}
+      : binding_(this, request.Pass()) {}
   ~ContentHandlerImpl() override {}
 
  private:

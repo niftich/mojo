@@ -12,13 +12,13 @@ namespace mojo {
 
 ApplicationConnectorImpl::ApplicationConnectorImpl(std::string application_name,
                                                    ApplicationManager* manager)
-  : name_(std::move(application_name)), manager_(manager) {}
+    : name_(std::move(application_name)), manager_(manager) {}
 
 ApplicationConnectorImpl::~ApplicationConnectorImpl() {}
 
 void ApplicationConnectorImpl::ConnectToApplication(
-      const String& app_name,
-      InterfaceRequest<ServiceProvider> services) {
+    const String& app_name,
+    InterfaceRequest<ServiceProvider> services) {
   manager_->ConnectToApplication(app_name, name_, std::move(services));
 }
 

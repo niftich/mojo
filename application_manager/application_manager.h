@@ -20,10 +20,9 @@ class ApplicationManager {
 
   bool StartInitialApplication(std::string name);
 
-  void ConnectToApplication(
-      const std::string& application_name,
-      const std::string& requestor_name,
-      InterfaceRequest<ServiceProvider> services);
+  void ConnectToApplication(const std::string& application_name,
+                            const std::string& requestor_name,
+                            InterfaceRequest<ServiceProvider> services);
 
   void StartApplicationUsingContentHandler(
       const std::string& content_handler_name,

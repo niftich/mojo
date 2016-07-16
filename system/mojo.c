@@ -15,14 +15,14 @@
 
 // TODO(abarth): MojoTimeTicks probably shouldn't be signed.
 static MojoTimeTicks TimeToMojoTicks(mx_time_t t) {
-  return (MojoTimeTicks) t / 1000u;
+  return (MojoTimeTicks)t / 1000u;
 }
 
 static mx_time_t MojoDeadlineToTime(MojoDeadline deadline) {
   if (deadline == MOJO_DEADLINE_INDEFINITE)
     return MX_TIME_INFINITE;
   // TODO(abarth): Handle overflow.
-  return (mx_time_t) deadline * 1000u;
+  return (mx_time_t)deadline * 1000u;
 }
 
 // handle.h --------------------------------------------------------------------
@@ -87,8 +87,8 @@ MojoResult MojoWait(MojoHandle handle,
   mx_signals_t* satisfied_signals = NULL;
   mx_signals_t* satisfiable_signals = NULL;
   if (signals_state) {
-    satisfied_signals = (mx_signals_t*) &signals_state->satisfied_signals;
-    satisfiable_signals = (mx_signals_t*) &signals_state->satisfiable_signals;
+    satisfied_signals = (mx_signals_t*)&signals_state->satisfied_signals;
+    satisfiable_signals = (mx_signals_t*)&signals_state->satisfiable_signals;
   }
   mx_status_t status = mx_handle_wait_one(
       handle, signals, mx_deadline, satisfied_signals, satisfiable_signals);
@@ -132,12 +132,9 @@ MojoResult MojoWaitMany(const MojoHandle* handles,
   mx_signals_t satisfied_signals[num_handles];
   mx_signals_t satisfiable_signals[num_handles];
 
-  mx_status_t status = mx_handle_wait_many(num_handles,
-                                           mx_handles,
-                                           mx_signals,
-                                           mx_deadline,
-                                           satisfied_signals,
-                                           satisfiable_signals);
+  mx_status_t status =
+      mx_handle_wait_many(num_handles, mx_handles, mx_signals, mx_deadline,
+                          satisfied_signals, satisfiable_signals);
 
   switch (status) {
     case NO_ERROR:
@@ -198,14 +195,10 @@ MojoResult MojoWriteMessage(MojoHandle message_pipe_handle,
                             const MojoHandle* handles,
                             uint32_t num_handles,
                             MojoWriteMessageFlags flags) {
-  mx_handle_t* mx_handles = (mx_handle_t*) handles;
+  mx_handle_t* mx_handles = (mx_handle_t*)handles;
   // TODO(abarth): Handle messages that are too big to fit.
-  mx_status_t status = mx_message_write(message_pipe_handle,
-                                        bytes,
-                                        num_bytes,
-                                        mx_handles,
-                                        num_handles,
-                                        flags);
+  mx_status_t status = mx_message_write(message_pipe_handle, bytes, num_bytes,
+                                        mx_handles, num_handles, flags);
   switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;
@@ -219,7 +212,7 @@ MojoResult MojoWriteMessage(MojoHandle message_pipe_handle,
     case ERR_NO_MEMORY:
       return MOJO_RESULT_RESOURCE_EXHAUSTED;
     case ERR_TOO_BIG:
-      // TODO(abarth): Handle messages that are too big to fit.
+    // TODO(abarth): Handle messages that are too big to fit.
     default:
       return MOJO_RESULT_UNKNOWN;
   }
@@ -231,14 +224,10 @@ MojoResult MojoReadMessage(MojoHandle message_pipe_handle,
                            MojoHandle* handles,
                            uint32_t* num_handles,
                            MojoReadMessageFlags flags) {
-  mx_handle_t* mx_handles = (mx_handle_t*) handles;
+  mx_handle_t* mx_handles = (mx_handle_t*)handles;
   // TODO(abarth): Handle messages that were too big to fit.
-  mx_status_t status = mx_message_read(message_pipe_handle,
-                                       bytes,
-                                       num_bytes,
-                                       mx_handles,
-                                       num_handles,
-                                       flags);
+  mx_status_t status = mx_message_read(message_pipe_handle, bytes, num_bytes,
+                                       mx_handles, num_handles, flags);
   switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;

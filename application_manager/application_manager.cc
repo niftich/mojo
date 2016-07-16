@@ -27,8 +27,8 @@ void ApplicationManager::ConnectToApplication(
     const std::string& application_name,
     const std::string& requestor_name,
     InterfaceRequest<ServiceProvider> services) {
-  ApplicationInstance* instance = GetOrStartApplicationInstance(
-      std::move(application_name));
+  ApplicationInstance* instance =
+      GetOrStartApplicationInstance(std::move(application_name));
   if (!instance)
     return;
   instance->application()->AcceptConnection(requestor_name, requestor_name,
@@ -39,8 +39,8 @@ void ApplicationManager::StartApplicationUsingContentHandler(
     const std::string& content_handler_name,
     URLResponsePtr response,
     InterfaceRequest<Application> application_request) {
-  ApplicationInstance* instance = GetOrStartApplicationInstance(
-      content_handler_name);
+  ApplicationInstance* instance =
+      GetOrStartApplicationInstance(content_handler_name);
   if (!instance)
     return;
   ContentHandler* content_handler = instance->GetOrCreateContentHandler();
@@ -57,9 +57,8 @@ ApplicationInstance* ApplicationManager::GetOrStartApplicationInstance(
   }
   if (!instance->is_initialized()) {
     instance->Initialize(ftl::MakeUnique<ShellImpl>(name, this), nullptr, name);
-    instance->set_connection_error_handler([this, instance]() {
-      table_.StopApplication(instance->name());
-    });
+    instance->set_connection_error_handler(
+        [this, instance]() { table_.StopApplication(instance->name()); });
   }
   return instance;
 }

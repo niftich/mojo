@@ -71,7 +71,8 @@ class EchoClientApp : public ApplicationImplBase {
   }
 
   void BeginEcho(int idx) {
-    if (ending_) return;
+    if (ending_)
+      return;
     if (idx == num_active_clients_) {
       idx = 0;
     }
@@ -91,7 +92,8 @@ class EchoClientApp : public ApplicationImplBase {
 
  private:
   void Run(int idx) {
-    if (ending_) return;
+    if (ending_)
+      return;
     if (warmup_) {
       echoClients_[idx]->EchoString("ping", EchoResponse(this, idx, false));
     } else {

@@ -8,9 +8,8 @@
 
 namespace mojo {
 
-ShellImpl::ShellImpl(std::string application_name,
-                     ApplicationManager* manager)
-  : binding_(this), connector_(std::move(application_name), manager) {}
+ShellImpl::ShellImpl(std::string application_name, ApplicationManager* manager)
+    : binding_(this), connector_(std::move(application_name), manager) {}
 
 ShellImpl::~ShellImpl() {}
 
