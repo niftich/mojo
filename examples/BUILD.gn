@@ -9,6 +9,7 @@ group("examples") {
     "//mojo/examples/echo",
     "//mojo/examples/hello_content_handler",
     "//mojo/examples/hello_mojo",
+    "//mojo/examples/shapes",
     "//mojo/examples/tiny",
   ]
 }
