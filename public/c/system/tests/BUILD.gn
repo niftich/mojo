@@ -10,15 +10,18 @@ mojo_sdk_source_set("tests") {
   cflags_c = [ "-Wundef" ]
 
   sources = [
-    "buffer_unittest.cc",
+    #"buffer_unittest.cc",
     "compile_unittest.cc",
-    "data_pipe_unittest.cc",
-    "handle_unittest.cc",
+
+    #"data_pipe_unittest.cc",
+    #"handle_unittest.cc",
     "macros_unittest.cc",
-    "message_pipe_unittest.cc",
+
+    #"message_pipe_unittest.cc",
     "result_unittest.cc",
     "time_unittest.cc",
-    "wait_set_unittest.cc",
+
+    #"wait_set_unittest.cc",
     "wait_unittest.cc",
   ]
 

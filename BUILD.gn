@@ -10,5 +10,6 @@ group("mojo") {
     "//mojo/examples",
     "//mojo/services",
     "//mojo/system",
+    "//mojo/test",
   ]
 }
