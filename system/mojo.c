@@ -59,8 +59,69 @@ MojoResult MojoDuplicateHandle(MojoHandle handle, MojoHandle* new_handle) {
   return MOJO_RESULT_OK;
 }
 
-// TODO(abarth): MojoGetRights, MojoReplaceHandleWithReducedRights,
-// MojoDuplicateHandleWithReducedRights
+MojoResult MojoGetRights(MojoHandle handle, MojoHandleRights* rights) {
+  mx_handle_basic_info_t handle_info;
+  mx_ssize_t result = mx_handle_get_info(handle, MX_INFO_HANDLE_BASIC,
+                                         &handle_info, sizeof(handle_info));
+  if (result < 0) {
+    switch (result) {
+      case ERR_BAD_HANDLE:
+      case ERR_INVALID_ARGS:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_ACCESS_DENIED:
+        return MOJO_RESULT_PERMISSION_DENIED;
+      case ERR_NO_MEMORY:
+        return MOJO_RESULT_RESOURCE_EXHAUSTED;
+      default:
+        return MOJO_RESULT_UNKNOWN;
+    }
+  }
+  *rights = handle_info.rights;
+  return MOJO_RESULT_OK;
+}
+
+MojoResult MojoReplaceHandleWithReducedRights(MojoHandle handle,
+                                              MojoHandleRights rights_to_remove,
+                                              MojoHandle* replacement_handle) {
+  // TODO: This doesn't work for handles without MOJO_HANDLE_RIGHT_DUPLICATE.
+  MojoHandle new_handle;
+  MojoResult result = MojoDuplicateHandleWithReducedRights(
+      handle, rights_to_remove, &new_handle);
+  if (result != MOJO_RESULT_OK)
+    return result;
+  result = MojoClose(handle);
+  if (result != MOJO_RESULT_OK)
+    return result;
+  *replacement_handle = new_handle;
+  return MOJO_RESULT_OK;
+}
+
+MojoResult MojoDuplicateHandleWithReducedRights(
+    MojoHandle handle,
+    MojoHandleRights rights_to_remove,
+    MojoHandle* new_handle) {
+  MojoHandleRights original_rights;
+  MojoResult result = MojoGetRights(handle, &original_rights);
+  if (result != MOJO_RESULT_OK)
+    return result;
+  MojoHandleRights new_rights = original_rights & ~rights_to_remove;
+  mx_handle_t new_mx_handle = mx_handle_duplicate(handle, new_rights);
+  if (new_mx_handle < 0) {
+    switch (new_mx_handle) {
+      case ERR_BAD_HANDLE:
+      case ERR_INVALID_ARGS:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_ACCESS_DENIED:
+        return MOJO_RESULT_PERMISSION_DENIED;
+      case ERR_NO_MEMORY:
+        return MOJO_RESULT_RESOURCE_EXHAUSTED;
+      default:
+        return MOJO_RESULT_UNKNOWN;
+    }
+  }
+  *new_handle = new_mx_handle;
+  return MOJO_RESULT_OK;
+}
 
 // time.h ----------------------------------------------------------------------
 
