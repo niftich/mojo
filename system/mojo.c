@@ -78,20 +78,20 @@ static_assert(MOJO_HANDLE_SIGNAL_WRITABLE == MX_SIGNAL_WRITABLE,
               "SIGNAL_WRITABLE must match");
 static_assert(MOJO_HANDLE_SIGNAL_PEER_CLOSED == MX_SIGNAL_PEER_CLOSED,
               "PEER_CLOSED must match");
+static_assert(sizeof(struct MojoHandleSignalsState) ==
+                  sizeof(mx_signals_state_t),
+              "Signals state structs must match");
 
 MojoResult MojoWait(MojoHandle handle,
                     MojoHandleSignals signals,
                     MojoDeadline deadline,
                     struct MojoHandleSignalsState* signals_state) {
   mx_time_t mx_deadline = MojoDeadlineToTime(deadline);
-  mx_signals_t* satisfied_signals = NULL;
-  mx_signals_t* satisfiable_signals = NULL;
-  if (signals_state) {
-    satisfied_signals = (mx_signals_t*)&signals_state->satisfied_signals;
-    satisfiable_signals = (mx_signals_t*)&signals_state->satisfiable_signals;
-  }
-  mx_status_t status = mx_handle_wait_one(
-      handle, signals, mx_deadline, satisfied_signals, satisfiable_signals);
+  mx_signals_state_t* mx_signals_state = (mx_signals_state_t*)signals_state;
+
+  mx_status_t status =
+      mx_handle_wait_one(handle, signals, mx_deadline, mx_signals_state);
+
   switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;
@@ -106,20 +106,6 @@ MojoResult MojoWait(MojoHandle handle,
   }
 }
 
-static void CopySignalsState(uint32_t num_handles,
-                             mx_signals_t* satisfied_signals,
-                             mx_signals_t* satisfiable_signals,
-                             struct MojoHandleSignalsState* signals_states) {
-  if (!signals_states)
-    return;
-  if (signals_states) {
-    for (uint32_t i = 0; i < num_handles; ++i) {
-      signals_states[i].satisfied_signals = satisfied_signals[i];
-      signals_states[i].satisfiable_signals = satisfiable_signals[i];
-    }
-  }
-}
-
 MojoResult MojoWaitMany(const MojoHandle* handles,
                         const MojoHandleSignals* signals,
                         uint32_t num_handles,
@@ -129,29 +115,16 @@ MojoResult MojoWaitMany(const MojoHandle* handles,
   mx_handle_t* mx_handles = (mx_handle_t*)handles;
   mx_signals_t* mx_signals = (mx_signals_t*)signals;
   mx_time_t mx_deadline = MojoDeadlineToTime(deadline);
-  mx_signals_t satisfied_signals[num_handles];
-  mx_signals_t satisfiable_signals[num_handles];
+  mx_signals_state_t* mx_signals_state = (mx_signals_state_t*)signals_states;
 
   mx_status_t status =
       mx_handle_wait_many(num_handles, mx_handles, mx_signals, mx_deadline,
-                          satisfied_signals, satisfiable_signals);
+                          result_index, mx_signals_state);
 
   switch (status) {
     case NO_ERROR:
-      if (result_index) {
-        for (uint32_t i = 0; i < num_handles; ++i) {
-          if (satisfied_signals[i] & signals[i]) {
-            *result_index = i;
-            break;
-          }
-        }
-      }
-      CopySignalsState(num_handles, satisfied_signals, satisfiable_signals,
-                       signals_states);
       return MOJO_RESULT_OK;
     case ERR_TIMED_OUT:
-      CopySignalsState(num_handles, satisfied_signals, satisfiable_signals,
-                       signals_states);
       return MOJO_RESULT_DEADLINE_EXCEEDED;
     case ERR_INVALID_ARGS:
       return MOJO_RESULT_INVALID_ARGUMENT;
