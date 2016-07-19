@@ -163,10 +163,23 @@ MojoResult MojoWait(MojoHandle handle,
   switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;
-    case ERR_TIMED_OUT:
-      return MOJO_RESULT_DEADLINE_EXCEEDED;
+    case ERR_CANCELLED:
+      return MOJO_RESULT_CANCELLED;
+    // TODO(vtl): This is currently not specified for MojoWait(), nor does
+    // mx_handle_wait_one() currently return this.
+    case ERR_NO_MEMORY:
+      return MOJO_RESULT_RESOURCE_EXHAUSTED;
     case ERR_INVALID_ARGS:
       return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_TIMED_OUT:
+      return MOJO_RESULT_DEADLINE_EXCEEDED;
+    case ERR_BAD_STATE:
+      return MOJO_RESULT_FAILED_PRECONDITION;
+    // TODO(vtl): mx_handle_wait_one() currently never returns this.
+    case ERR_BUSY:
+      return MOJO_RESULT_BUSY;
+    // TODO(vtl): The Mojo version doesn't require any rights to wait, whereas
+    // Magenta requires MX_RIGHT_READ.
     case ERR_ACCESS_DENIED:
       return MOJO_RESULT_PERMISSION_DENIED;
     default:
@@ -180,8 +193,8 @@ MojoResult MojoWaitMany(const MojoHandle* handles,
                         MojoDeadline deadline,
                         uint32_t* result_index,
                         struct MojoHandleSignalsState* signals_states) {
-  mx_handle_t* mx_handles = (mx_handle_t*)handles;
-  mx_signals_t* mx_signals = (mx_signals_t*)signals;
+  const mx_handle_t* mx_handles = (const mx_handle_t*)handles;
+  const mx_signals_t* mx_signals = (const mx_signals_t*)signals;
   mx_time_t mx_deadline = MojoDeadlineToTime(deadline);
   mx_signals_state_t* mx_signals_state = (mx_signals_state_t*)signals_states;
 
@@ -192,14 +205,23 @@ MojoResult MojoWaitMany(const MojoHandle* handles,
   switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;
-    case ERR_TIMED_OUT:
-      return MOJO_RESULT_DEADLINE_EXCEEDED;
-    case ERR_INVALID_ARGS:
-      return MOJO_RESULT_INVALID_ARGUMENT;
-    case ERR_ACCESS_DENIED:
-      return MOJO_RESULT_PERMISSION_DENIED;
+    case ERR_CANCELLED:
+      return MOJO_RESULT_CANCELLED;
     case ERR_NO_MEMORY:
       return MOJO_RESULT_RESOURCE_EXHAUSTED;
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_TIMED_OUT:
+      return MOJO_RESULT_DEADLINE_EXCEEDED;
+    case ERR_BAD_STATE:
+      return MOJO_RESULT_FAILED_PRECONDITION;
+    // TODO(vtl): mx_handle_wait_many() currently never returns this.
+    case ERR_BUSY:
+      return MOJO_RESULT_BUSY;
+    // TODO(vtl): The Mojo version doesn't require any rights to wait, whereas
+    // Magenta requires MX_RIGHT_READ.
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
     default:
       return MOJO_RESULT_UNKNOWN;
   }
