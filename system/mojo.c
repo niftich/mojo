@@ -28,7 +28,7 @@ static mx_time_t MojoDeadlineToTime(MojoDeadline deadline) {
 // handle.h --------------------------------------------------------------------
 
 MojoResult MojoClose(MojoHandle handle) {
-  mx_status_t status = mx_handle_close(handle);
+  mx_status_t status = mx_handle_close((mx_handle_t)handle);
   switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;
@@ -40,7 +40,8 @@ MojoResult MojoClose(MojoHandle handle) {
 }
 
 MojoResult MojoDuplicateHandle(MojoHandle handle, MojoHandle* new_handle) {
-  mx_handle_t result = mx_handle_duplicate(handle, MX_RIGHT_SAME_RIGHTS);
+  mx_handle_t result =
+      mx_handle_duplicate((mx_handle_t)handle, MX_RIGHT_SAME_RIGHTS);
   if (result < 0) {
     switch (result) {
       case ERR_BAD_HANDLE:
@@ -55,16 +56,19 @@ MojoResult MojoDuplicateHandle(MojoHandle handle, MojoHandle* new_handle) {
         return MOJO_RESULT_UNKNOWN;
     }
   }
-  *new_handle = result;
+  *new_handle = (MojoHandle)result;
   return MOJO_RESULT_OK;
 }
 
 MojoResult MojoGetRights(MojoHandle handle, MojoHandleRights* rights) {
   mx_handle_basic_info_t handle_info;
-  mx_ssize_t result = mx_handle_get_info(handle, MX_INFO_HANDLE_BASIC,
-                                         &handle_info, sizeof(handle_info));
+  mx_ssize_t result =
+      mx_handle_get_info((mx_handle_t)handle, MX_INFO_HANDLE_BASIC,
+                         &handle_info, sizeof(handle_info));
   if (result < 0) {
     switch (result) {
+      case ERR_BUSY:
+        return MOJO_RESULT_BUSY;
       case ERR_BAD_HANDLE:
       case ERR_INVALID_ARGS:
         return MOJO_RESULT_INVALID_ARGUMENT;
@@ -105,9 +109,12 @@ MojoResult MojoDuplicateHandleWithReducedRights(
   if (result != MOJO_RESULT_OK)
     return result;
   MojoHandleRights new_rights = original_rights & ~rights_to_remove;
-  mx_handle_t new_mx_handle = mx_handle_duplicate(handle, new_rights);
+  mx_handle_t new_mx_handle =
+      mx_handle_duplicate((mx_handle_t)handle, new_rights);
   if (new_mx_handle < 0) {
     switch (new_mx_handle) {
+      case ERR_BUSY:
+        return MOJO_RESULT_BUSY;
       case ERR_BAD_HANDLE:
       case ERR_INVALID_ARGS:
         return MOJO_RESULT_INVALID_ARGUMENT;
@@ -119,7 +126,7 @@ MojoResult MojoDuplicateHandleWithReducedRights(
         return MOJO_RESULT_UNKNOWN;
     }
   }
-  *new_handle = new_mx_handle;
+  *new_handle = (MojoHandle)new_mx_handle;
   return MOJO_RESULT_OK;
 }
 
@@ -150,8 +157,8 @@ MojoResult MojoWait(MojoHandle handle,
   mx_time_t mx_deadline = MojoDeadlineToTime(deadline);
   mx_signals_state_t* mx_signals_state = (mx_signals_state_t*)signals_state;
 
-  mx_status_t status =
-      mx_handle_wait_one(handle, signals, mx_deadline, mx_signals_state);
+  mx_status_t status = mx_handle_wait_one((mx_handle_t)handle, signals,
+                                          mx_deadline, mx_signals_state);
 
   switch (status) {
     case NO_ERROR:
@@ -218,8 +225,8 @@ MojoResult MojoCreateMessagePipe(
         return MOJO_RESULT_UNKNOWN;
     }
   }
-  *message_pipe_handle0 = mx_handles[0];
-  *message_pipe_handle1 = mx_handles[1];
+  *message_pipe_handle0 = (MojoHandle)mx_handles[0];
+  *message_pipe_handle1 = (MojoHandle)mx_handles[1];
   return MOJO_RESULT_OK;
 }
 
@@ -231,8 +238,9 @@ MojoResult MojoWriteMessage(MojoHandle message_pipe_handle,
                             MojoWriteMessageFlags flags) {
   mx_handle_t* mx_handles = (mx_handle_t*)handles;
   // TODO(abarth): Handle messages that are too big to fit.
-  mx_status_t status = mx_message_write(message_pipe_handle, bytes, num_bytes,
-                                        mx_handles, num_handles, flags);
+  mx_status_t status =
+      mx_message_write((mx_handle_t)message_pipe_handle, bytes, num_bytes,
+                       mx_handles, num_handles, flags);
   switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;
@@ -260,8 +268,9 @@ MojoResult MojoReadMessage(MojoHandle message_pipe_handle,
                            MojoReadMessageFlags flags) {
   mx_handle_t* mx_handles = (mx_handle_t*)handles;
   // TODO(abarth): Handle messages that were too big to fit.
-  mx_status_t status = mx_message_read(message_pipe_handle, bytes, num_bytes,
-                                       mx_handles, num_handles, flags);
+  mx_status_t status =
+      mx_message_read((mx_handle_t)message_pipe_handle, bytes, num_bytes,
+                      mx_handles, num_handles, flags);
   switch (status) {
     case NO_ERROR:
       return MOJO_RESULT_OK;

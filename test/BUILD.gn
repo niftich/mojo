@@ -16,6 +16,7 @@ executable("mojo_public_unittests") {
   sources = [
     "run_all_unittests.cc",
   ]
+
   deps = [
     "//mojo/public/c/system/tests",
     "//mojo/system",

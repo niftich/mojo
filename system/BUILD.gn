@@ -10,6 +10,8 @@ source_set("impl") {
   deps = [
     "//mojo/public/c/system",
   ]
+
+  cflags = [ "-Wsign-conversion" ]
 }
 
 static_library("system") {
