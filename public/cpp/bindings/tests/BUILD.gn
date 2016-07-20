@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("../../../mojo_application.gni")
 import("../../../mojo_sdk.gni")
 
 mojo_sdk_source_set("tests") {
@@ -20,7 +19,8 @@ mojo_sdk_source_set("tests") {
     "container_test_util.cc",
     "equals_unittest.cc",
     "formatting_unittest.cc",
-    "handle_passing_unittest.cc",
+
+    #"handle_passing_unittest.cc",
     "interface_ptr_unittest.cc",
     "interface_unittest.cc",
     "iterator_test_util.h",
@@ -31,7 +31,8 @@ mojo_sdk_source_set("tests") {
     "message_queue.h",
     "request_response_unittest.cc",
     "router_unittest.cc",
-    "sample_service_unittest.cc",
+
+    #"sample_service_unittest.cc",
     "serialization_api_unittest.cc",
     "serialization_warning_unittest.cc",
     "string_unittest.cc",
@@ -92,11 +93,12 @@ mojo_sdk_source_set("mojo_public_bindings_test_utils") {
   mojo_sdk_deps = [ "mojo/public/c/system" ]
 }
 
-mojo_native_application("versioning_test_service") {
+executable("versioning_test_service") {
   testonly = true
 
   deps = [
     ":versioning_test_service_source_set",
+    "//mojo/system",
   ]
 }
 
@@ -116,11 +118,12 @@ mojo_sdk_source_set("versioning_test_service_source_set") {
   ]
 }
 
-mojo_native_application("versioning_apptests") {
+executable("versioning_apptests") {
   testonly = true
 
   deps = [
     ":versioning_apptest_source_set",
+    "//mojo/system",
   ]
   data_deps = [
     ":versioning_test_service",

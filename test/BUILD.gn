@@ -6,11 +6,39 @@ group("test") {
   testonly = true
 
   deps = [
-    ":mojo_public_unittests",
+    ":mojo_public_c_bindings_unittests",
+    ":mojo_public_c_system_unittests",
+    ":mojo_public_cpp_bindings_unittests",
   ]
 }
 
-executable("mojo_public_unittests") {
+source_set("test_support") {
+  testonly = true
+
+  sources = [
+    "test_support.cc",
+  ]
+
+  deps = [
+    "//mojo/public/cpp/test_support",
+  ]
+}
+
+executable("mojo_public_c_bindings_unittests") {
+  testonly = true
+
+  sources = [
+    "run_all_unittests.cc",
+  ]
+
+  deps = [
+    "//mojo/public/c/bindings/tests",
+    "//mojo/system",
+    "//third_party/gtest",
+  ]
+}
+
+executable("mojo_public_c_system_unittests") {
   testonly = true
 
   sources = [
@@ -19,6 +47,21 @@ executable("mojo_public_unittests") {
 
   deps = [
     "//mojo/public/c/system/tests",
+    "//mojo/system",
+    "//third_party/gtest",
+  ]
+}
+
+executable("mojo_public_cpp_bindings_unittests") {
+  testonly = true
+
+  sources = [
+    "run_all_unittests.cc",
+  ]
+
+  deps = [
+    ":test_support",
+    "//mojo/public/cpp/bindings/tests",
     "//mojo/system",
     "//third_party/gtest",
   ]

@@ -8,6 +8,8 @@
 #ifndef MOJO_PUBLIC_CPP_TEST_SUPPORT_TEST_SUPPORT_H_
 #define MOJO_PUBLIC_CPP_TEST_SUPPORT_TEST_SUPPORT_H_
 
+#include <stdio.h>
+
 #include <string>
 #include <vector>
 
