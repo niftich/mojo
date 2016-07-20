@@ -50,8 +50,7 @@ class PingPongTest {
 };
 
 PingPongTest::PingPongTest(test::PingServicePtr service)
-    : service_(service.Pass()) {
-}
+    : service_(service.Pass()) {}
 
 void PingPongTest::Run(unsigned int iterations) {
   iterations_to_run_ = iterations;
@@ -72,9 +71,7 @@ void PingPongTest::OnPingDone() {
 }
 
 struct BoundPingService {
-  BoundPingService() : binding(&impl) {
-    binding.Bind(GetProxy(&service));
-  }
+  BoundPingService() : binding(&impl) { binding.Bind(GetProxy(&service)); }
 
   PingServiceImpl impl;
   test::PingServicePtr service;
@@ -97,14 +94,13 @@ TEST_F(MojoBindingsPerftest, InProcessPingPong) {
     const MojoTimeTicks start_time = MojoGetTimeTicksNow();
     test.Run(kIterations);
     const MojoTimeTicks end_time = MojoGetTimeTicksNow();
-    test::LogPerfResult(
-        "InProcessPingPong", "0_Inactive",
-        kIterations / MojoTicksToSeconds(end_time - start_time),
-        "pings/second");
+    test::LogPerfResult("InProcessPingPong", "0_Inactive",
+                        kIterations / MojoTicksToSeconds(end_time - start_time),
+                        "pings/second");
   }
 
   {
-    const size_t kNumInactiveServices = 1000;
+    const size_t kNumInactiveServices = 100;
     BoundPingService* inactive_services =
         new BoundPingService[kNumInactiveServices];
 
@@ -112,10 +108,9 @@ TEST_F(MojoBindingsPerftest, InProcessPingPong) {
     const MojoTimeTicks start_time = MojoGetTimeTicksNow();
     test.Run(kIterations);
     const MojoTimeTicks end_time = MojoGetTimeTicksNow();
-    test::LogPerfResult(
-        "InProcessPingPong", "1000_Inactive",
-        kIterations / MojoTicksToSeconds(end_time - start_time),
-        "pings/second");
+    test::LogPerfResult("InProcessPingPong", "1000_Inactive",
+                        kIterations / MojoTicksToSeconds(end_time - start_time),
+                        "pings/second");
 
     delete[] inactive_services;
   }

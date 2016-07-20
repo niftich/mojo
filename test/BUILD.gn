@@ -8,6 +8,7 @@ group("test") {
   deps = [
     ":mojo_public_c_bindings_unittests",
     ":mojo_public_c_system_unittests",
+    ":mojo_public_cpp_bindings_perftests",
     ":mojo_public_cpp_bindings_unittests",
   ]
 }
@@ -47,6 +48,21 @@ executable("mojo_public_c_system_unittests") {
 
   deps = [
     "//mojo/public/c/system/tests",
+    "//mojo/system",
+    "//third_party/gtest",
+  ]
+}
+
+executable("mojo_public_cpp_bindings_perftests") {
+  testonly = true
+
+  sources = [
+    "run_all_unittests.cc",
+  ]
+
+  deps = [
+    ":test_support",
+    "//mojo/public/cpp/bindings/tests:perftests",
     "//mojo/system",
     "//third_party/gtest",
   ]
