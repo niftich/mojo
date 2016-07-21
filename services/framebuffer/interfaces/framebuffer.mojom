@@ -1,0 +1,45 @@
+// Copyright 2016 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+module mojo;
+
+import "mojo/services/geometry/interfaces/geometry.mojom";
+
+enum FramebufferFormat {
+  NONE,
+  RGB_565,
+  RGB_332,
+  RGB_2220,
+  ARGB_8888,
+  RGB_x888,
+  MONO_1,
+  MONO_8,
+};
+
+struct FramebufferInfo {
+  // How colors are packed into frame buffer pixels.
+  FramebufferFormat format;
+
+  // The size of the frame buffer in physical pixels.
+  Size size;
+
+  // The offset from one row of pixels to the next.
+  int32 row_bytes;
+
+  // The underlying virtual memory object in which the frame buffer is stored.
+  handle vmo;
+};
+
+interface Framebuffer {
+  // Ensure that changes to the framebuffer are reflected on screen.
+  //
+  // Between calling Flush and receiving the reply, the framebuffer is using the
+  // vmo and clients shouldn't write to it.
+  Flush() => ();
+};
+
+[ServiceName="mojo::FramebufferProvider"]
+interface FramebufferProvider {
+  Create() => (Framebuffer? buffer, FramebufferInfo? info);
+};

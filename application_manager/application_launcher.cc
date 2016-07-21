@@ -77,14 +77,29 @@ mtl::UniqueHandle LaunchWithProcess(
     mojo::InterfaceRequest<mojo::Application> request) {
   // We need room for:
   //
-  //  * stdin/stdout/stderror
+  //  * stdin/stdout/stderr
+  //  * The mxio root (for framebuffer)
   //  * The shell handle
   //  * The process handle
-  mx_handle_t child_handles[5 * MXIO_MAX_HANDLES];
-  uint32_t ids[5 * MXIO_MAX_HANDLES];
+  mx_handle_t child_handles[6 * MXIO_MAX_HANDLES];
+  uint32_t ids[6 * MXIO_MAX_HANDLES];
 
   // TODO(abarth): Remove stdin, stdout, and stderr.
   size_t index = CloneStdStreams(child_handles, ids);
+
+  // The framebuffer app is a special snowflake because it needs access to the
+  // device tree to talk to the virtual console.
+  // TODO(abarth): Find a more structured way to define which apps should have
+  // elevated privileges.
+  if (path == "/boot/apps/framebuffer") {
+    mx_status_t status = mxio_clone_root(&child_handles[index], &ids[index]);
+    if (status < 0) {
+      fprintf(stderr, "Failed to clone mxio root: %d", status);
+    } else {
+      index += status;
+    }
+  }
+
   mojo::Handle initial_handle = request.PassMessagePipe().release();
   child_handles[index] = static_cast<mx_handle_t>(initial_handle.value());
   ids[index] = MX_HND_TYPE_APPLICATION_REQUEST;
