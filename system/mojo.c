@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "mojo/public/c/system/buffer.h"
+#include "mojo/public/c/system/data_pipe.h"
 #include "mojo/public/c/system/handle.h"
 #include "mojo/public/c/system/message_pipe.h"
 #include "mojo/public/c/system/wait.h"
@@ -318,7 +319,229 @@ MojoResult MojoReadMessage(MojoHandle message_pipe_handle,
 
 // data_pipe.h -----------------------------------------------------------------
 
-// TODO(abarth): Not implemented.
+MojoResult MojoCreateDataPipe(const struct MojoCreateDataPipeOptions* options,
+                              MojoHandle* data_pipe_producer_handle,
+                              MojoHandle* data_pipe_consumer_handle) {
+  uint32_t element_num_bytes = 1u;
+  uint32_t capacity_num_bytes = 0u;
+  if (options) {
+    if (options->flags) {
+      // TODO: Support flags
+      return MOJO_RESULT_UNIMPLEMENTED;
+    }
+    element_num_bytes = options->element_num_bytes;
+    if (options->capacity_num_bytes)
+      capacity_num_bytes = options->capacity_num_bytes;
+  }
+  mx_handle_t mx_consumer_handle = 0u;
+  mx_handle_t mx_producer_handle = mx_data_pipe_create(
+      0u,  // TODO: Flags
+      element_num_bytes, capacity_num_bytes, &mx_consumer_handle);
+  if (mx_producer_handle < 0) {
+    switch (mx_producer_handle) {
+      case ERR_INVALID_ARGS:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_NO_MEMORY:
+        return MOJO_RESULT_RESOURCE_EXHAUSTED;
+      default:
+        return MOJO_RESULT_UNKNOWN;
+    }
+  }
+  *data_pipe_producer_handle = (MojoHandle)mx_producer_handle;
+  *data_pipe_consumer_handle = (MojoHandle)mx_consumer_handle;
+  return MOJO_RESULT_OK;
+}
+
+MojoResult MojoSetDataPipeProducerOptions(
+    MojoHandle data_pipe_producer_handle,
+    const struct MojoDataPipeProducerOptions* options) {
+  return MOJO_RESULT_UNIMPLEMENTED;
+}
+
+MojoResult MojoGetDataPipeProducerOptions(
+    MojoHandle data_pipe_producer_handle,
+    struct MojoDataPipeProducerOptions* options,
+    uint32_t options_num_bytes) {
+  return MOJO_RESULT_UNIMPLEMENTED;
+}
+
+MojoResult MojoWriteData(MojoHandle data_pipe_producer_handle,
+                         const void* elements,
+                         uint32_t* num_bytes,
+                         MojoWriteDataFlags flags) {
+  if (flags) {
+    // TODO: Support flags
+    return MOJO_RESULT_UNIMPLEMENTED;
+  }
+  mx_ssize_t mx_bytes_written =
+      mx_data_pipe_write((mx_handle_t)data_pipe_producer_handle,
+                         0u,  // TODO: flags
+                         *num_bytes, elements);
+  if (mx_bytes_written < 0) {
+    switch (mx_bytes_written) {
+      case ERR_BAD_HANDLE:
+      case ERR_INVALID_ARGS:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_ACCESS_DENIED:
+        return MOJO_RESULT_PERMISSION_DENIED;
+      case ERR_BAD_STATE:
+        return MOJO_RESULT_FAILED_PRECONDITION;
+      case ERR_NOT_READY:
+        return MOJO_RESULT_SHOULD_WAIT;
+      default:
+        return MOJO_RESULT_UNKNOWN;
+    }
+  }
+  *num_bytes = mx_bytes_written;
+  return MOJO_RESULT_OK;
+}
+
+MojoResult MojoBeginWriteData(MojoHandle data_pipe_producer_handle,
+                              void** buffer,
+                              uint32_t* buffer_num_bytes,
+                              MojoWriteDataFlags flags) {
+  if (flags) {
+    // TODO: Support flags
+    return MOJO_RESULT_UNIMPLEMENTED;
+  }
+  mx_ssize_t result =
+      mx_data_pipe_begin_write((mx_handle_t)data_pipe_producer_handle,
+                               0u,  // TODO: flags
+                               *buffer_num_bytes, (uintptr_t*)buffer);
+  if (result < 0) {
+    switch (result) {
+      case ERR_BAD_HANDLE:
+      case ERR_INVALID_ARGS:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_ACCESS_DENIED:
+        return MOJO_RESULT_PERMISSION_DENIED;
+      case ERR_BAD_STATE:
+        return MOJO_RESULT_FAILED_PRECONDITION;
+      case ERR_NOT_READY:
+        return MOJO_RESULT_SHOULD_WAIT;
+      default:
+        return MOJO_RESULT_UNKNOWN;
+    }
+  }
+  *buffer_num_bytes = (uint32_t)result;
+  return MOJO_RESULT_OK;
+}
+
+MojoResult MojoEndWriteData(MojoHandle data_pipe_producer_handle,
+                            uint32_t num_bytes_written) {
+  mx_status_t result = mx_data_pipe_end_write(
+      (mx_handle_t)data_pipe_producer_handle, num_bytes_written);
+  switch (result) {
+    case NO_ERROR:
+      return MOJO_RESULT_OK;
+    case ERR_BAD_HANDLE:
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
+    case ERR_BAD_STATE:
+      return MOJO_RESULT_FAILED_PRECONDITION;
+    case ERR_NOT_READY:
+      return MOJO_RESULT_SHOULD_WAIT;
+    default:
+      return MOJO_RESULT_INTERNAL;
+  }
+}
+
+MojoResult MojoSetDataPipeConsumerOptions(
+    MojoHandle data_pipe_consumer_handle,
+    const struct MojoDataPipeConsumerOptions* options) {
+  return MOJO_RESULT_UNIMPLEMENTED;
+}
+
+MojoResult MojoGetDataPipeConsumerOptions(
+    MojoHandle data_pipe_consumer_handle,
+    struct MojoDataPipeConsumerOptions* options,
+    uint32_t options_num_bytes) {
+  return MOJO_RESULT_UNIMPLEMENTED;
+}
+
+MojoResult MojoReadData(MojoHandle data_pipe_consumer_handle,
+                        void* elements,
+                        uint32_t* num_bytes,
+                        MojoReadDataFlags flags) {
+  if (flags) {
+    // TODO: Support flags
+    return MOJO_RESULT_UNIMPLEMENTED;
+  }
+  mx_ssize_t bytes_read = mx_data_pipe_read(
+      (mx_handle_t)data_pipe_consumer_handle, 0u, *num_bytes, elements);
+  if (bytes_read < 0) {
+    switch (bytes_read) {
+      case ERR_INVALID_ARGS:
+      case ERR_BAD_HANDLE:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_ACCESS_DENIED:
+        return MOJO_RESULT_PERMISSION_DENIED;
+      case ERR_BAD_STATE:
+        return MOJO_RESULT_FAILED_PRECONDITION;
+      case ERR_NOT_READY:
+        return MOJO_RESULT_SHOULD_WAIT;
+      default:
+        return MOJO_RESULT_INTERNAL;
+    }
+  }
+  if (bytes_read < 0) {
+    return MOJO_RESULT_UNKNOWN;
+  }
+  *num_bytes = bytes_read;
+  return MOJO_RESULT_OK;
+}
+
+MojoResult MojoBeginReadData(MojoHandle data_pipe_consumer_handle,
+                             const void** buffer,
+                             uint32_t* buffer_num_bytes,
+                             MojoReadDataFlags flags) {
+  if (flags) {
+    // TODO: Support flags
+    return MOJO_RESULT_UNIMPLEMENTED;
+  }
+  mx_ssize_t result =
+      mx_data_pipe_begin_read((mx_handle_t)data_pipe_consumer_handle,
+                              0u,  // TODO: flags
+                              *buffer_num_bytes, (uintptr_t*)buffer);
+  if (result < 0) {
+    switch (result) {
+      case ERR_INVALID_ARGS:
+      case ERR_BAD_HANDLE:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_ACCESS_DENIED:
+        return MOJO_RESULT_PERMISSION_DENIED;
+      case ERR_BAD_STATE:
+        return MOJO_RESULT_FAILED_PRECONDITION;
+      case ERR_NOT_READY:
+        return MOJO_RESULT_SHOULD_WAIT;
+      default:
+        return MOJO_RESULT_INTERNAL;
+    }
+  }
+  *buffer_num_bytes = (uint32_t)result;
+  return MOJO_RESULT_OK;
+}
+
+MojoResult MojoEndReadData(MojoHandle data_pipe_consumer_handle,
+                           uint32_t num_bytes_read) {
+  mx_status_t result = mx_data_pipe_end_read(
+      (mx_handle_t)data_pipe_consumer_handle, num_bytes_read);
+  switch (result) {
+    case NO_ERROR:
+      return MOJO_RESULT_OK;
+    case ERR_BAD_HANDLE:
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
+    case ERR_BAD_STATE:
+      return MOJO_RESULT_FAILED_PRECONDITION;
+    default:
+      return MOJO_RESULT_INTERNAL;
+  }
+}
 
 // buffer.h --------------------------------------------------------------------
 

@@ -11,7 +11,7 @@ source_set("impl") {
     "//mojo/public/c/system",
   ]
 
-  cflags = [ "-Wsign-conversion" ]
+  cflags = [ "-Werror", "-Wsign-conversion" ]
 }
 
 static_library("system") {

@@ -123,10 +123,12 @@ TEST(DataPipeTest, Basic) {
 
   // Write to |hp|.
   static const char kHello[] = "hello ";
+  static const uint32_t kHelloLen = static_cast<uint32_t>(strlen(kHello));
   // Don't include terminating null.
-  buffer_size = static_cast<uint32_t>(strlen(kHello));
+  buffer_size = kHelloLen;
   EXPECT_EQ(MOJO_RESULT_OK,
             MojoWriteData(hp, kHello, &buffer_size, MOJO_WRITE_DATA_FLAG_NONE));
+  EXPECT_EQ(kHelloLen, buffer_size);
 
   // |hc| should be(come) readable.
   MojoHandleSignals sig = MOJO_HANDLE_SIGNAL_READABLE;
@@ -143,7 +145,7 @@ TEST(DataPipeTest, Basic) {
 
   // Do a two-phase write to |hp|.
   void* write_pointer = nullptr;
-  EXPECT_EQ(MOJO_RESULT_OK, MojoBeginWriteData(hp, &write_pointer, &buffer_size,
+  ASSERT_EQ(MOJO_RESULT_OK, MojoBeginWriteData(hp, &write_pointer, &buffer_size,
                                                MOJO_WRITE_DATA_FLAG_NONE));
   static const char kWorld[] = "world";
   ASSERT_GE(buffer_size, sizeof(kWorld));
@@ -157,6 +159,8 @@ TEST(DataPipeTest, Basic) {
   buffer_size = 1;
   EXPECT_EQ(MOJO_RESULT_OK,
             MojoReadData(hc, buffer, &buffer_size, MOJO_READ_DATA_FLAG_NONE));
+  ASSERT_EQ(1u, buffer_size);
+  EXPECT_EQ('h', buffer[0]);
 
   // Close |hp|.
   EXPECT_EQ(MOJO_RESULT_OK, MojoClose(hp));
@@ -173,7 +177,7 @@ TEST(DataPipeTest, Basic) {
 
   // Do a two-phase read from |hc|.
   read_pointer = nullptr;
-  EXPECT_EQ(MOJO_RESULT_OK, MojoBeginReadData(hc, &read_pointer, &buffer_size,
+  ASSERT_EQ(MOJO_RESULT_OK, MojoBeginReadData(hc, &read_pointer, &buffer_size,
                                               MOJO_READ_DATA_FLAG_NONE));
   ASSERT_LE(buffer_size, sizeof(buffer) - 1);
   memcpy(&buffer[1], read_pointer, buffer_size);
