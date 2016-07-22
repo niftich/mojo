@@ -6,6 +6,7 @@
 #include <magenta/syscalls.h>
 #include <string.h>
 
+#include "mojo/public/c/system/buffer.h"
 #include "mojo/public/c/system/handle.h"
 #include "mojo/public/c/system/message_pipe.h"
 #include "mojo/public/c/system/wait.h"
@@ -321,7 +322,104 @@ MojoResult MojoReadMessage(MojoHandle message_pipe_handle,
 
 // buffer.h --------------------------------------------------------------------
 
-// TODO(abarth): Not implemented.
+MojoResult MojoCreateSharedBuffer(
+    const struct MojoCreateSharedBufferOptions* options,
+    uint64_t num_bytes,
+    MojoHandle* shared_buffer_handle) {
+  if (options && options->flags != MOJO_CREATE_SHARED_BUFFER_OPTIONS_FLAG_NONE)
+    return MOJO_RESULT_UNIMPLEMENTED;
+  mx_handle_t result = mx_vm_object_create(num_bytes);
+  if (result < 0) {
+    switch (result) {
+      case ERR_INVALID_ARGS:
+        return MOJO_RESULT_INVALID_ARGUMENT;
+      case ERR_NO_MEMORY:
+        return MOJO_RESULT_RESOURCE_EXHAUSTED;
+      default:
+        return MOJO_RESULT_UNKNOWN;
+    }
+  }
+  *shared_buffer_handle = (MojoHandle)result;
+  return MOJO_RESULT_OK;
+}
+
+MojoResult MojoDuplicateBufferHandle(
+    MojoHandle buffer_handle,
+    const struct MojoDuplicateBufferHandleOptions* options,
+    MojoHandle* new_buffer_handle) {
+  if (options &&
+      options->flags != MOJO_DUPLICATE_BUFFER_HANDLE_OPTIONS_FLAG_NONE)
+    return MOJO_RESULT_UNIMPLEMENTED;
+  return MojoDuplicateHandle(buffer_handle, new_buffer_handle);
+}
+
+MojoResult MojoGetBufferInformation(MojoHandle buffer_handle,
+                                    struct MojoBufferInformation* info,
+                                    uint32_t info_num_bytes) {
+  if (!info || info_num_bytes < 16)
+    return MOJO_RESULT_INVALID_ARGUMENT;
+  mx_handle_t vmo_handle = (mx_handle_t)buffer_handle;
+  uint64_t num_bytes = 0;
+  mx_status_t status = mx_vm_object_get_size(vmo_handle, &num_bytes);
+  switch (status) {
+    case NO_ERROR:
+      info->struct_size = sizeof(struct MojoBufferInformation);
+      info->flags = MOJO_BUFFER_INFORMATION_FLAG_NONE;
+      info->num_bytes = num_bytes;
+      return MOJO_RESULT_OK;
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
+    default:
+      return MOJO_RESULT_UNKNOWN;
+  }
+}
+
+MojoResult MojoMapBuffer(MojoHandle buffer_handle,
+                         uint64_t offset,
+                         uint64_t num_bytes,
+                         void** buffer,
+                         MojoMapBufferFlags flags) {
+  if (flags != MOJO_MAP_BUFFER_FLAG_NONE)
+    return MOJO_RESULT_INVALID_ARGUMENT;
+  mx_handle_t vmo_handle = (mx_handle_t)buffer_handle;
+  uintptr_t* mx_pointer = (uintptr_t*)buffer;
+  // TODO(abarth): Mojo doesn't let you specify any flags. It's unclear whether
+  // this is a reasonable default.
+  uint32_t mx_flags = MX_VM_FLAG_PERM_READ | MX_VM_FLAG_PERM_WRITE;
+
+  mx_status_t status =
+      mx_process_vm_map(0, vmo_handle, offset, num_bytes, mx_pointer, mx_flags);
+  switch (status) {
+    case NO_ERROR:
+      return MOJO_RESULT_OK;
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    case ERR_ACCESS_DENIED:
+      return MOJO_RESULT_PERMISSION_DENIED;
+    case ERR_NO_MEMORY:
+      return MOJO_RESULT_RESOURCE_EXHAUSTED;
+    default:
+      return MOJO_RESULT_UNKNOWN;
+  }
+}
+
+MojoResult MojoUnmapBuffer(void* buffer) {
+  uintptr_t address = (uintptr_t)buffer;
+  // TODO(abarth): mx_process_vm_unmap needs the length to unmap, but Mojo
+  // doesn't give us the length.
+  mx_size_t length = 0;
+  mx_status_t status = mx_process_vm_unmap(0, address, length);
+  switch (status) {
+    case NO_ERROR:
+      return MOJO_RESULT_OK;
+    case ERR_INVALID_ARGS:
+      return MOJO_RESULT_INVALID_ARGUMENT;
+    default:
+      return MOJO_RESULT_UNKNOWN;
+  }
+}
 
 // wait_set.h ------------------------------------------------------------------
 
