@@ -6,10 +6,11 @@ group("test") {
   testonly = true
 
   deps = [
-    ":mojo_public_c_bindings_unittests",
-    ":mojo_public_c_system_unittests",
-    ":mojo_public_cpp_bindings_perftests",
-    ":mojo_public_cpp_bindings_unittests",
+    ":c_bindings_unit",
+    ":c_system_unit",
+    ":cpp_application_unit",
+    ":cpp_bindings_perf",
+    ":cpp_bindings_unit",
   ]
 }
 
@@ -25,60 +26,52 @@ source_set("test_support") {
   ]
 }
 
-executable("mojo_public_c_bindings_unittests") {
-  testonly = true
+template("mojo_public_test") {
+  assert(defined(invoker.deps), "Need deps in $target_name.")
 
-  sources = [
-    "run_all_unittests.cc",
-  ]
+  executable(target_name) {
+    testonly = true
+    output_name = "mojo_public_" + target_name + "tests"
 
+    sources = [
+      "run_all_unittests.cc",
+    ]
+
+    deps = [
+             "//mojo/system",
+             "//third_party/gtest",
+           ] + invoker.deps
+  }
+}
+
+mojo_public_test("c_bindings_unit") {
   deps = [
     "//mojo/public/c/bindings/tests",
-    "//mojo/system",
-    "//third_party/gtest",
   ]
 }
 
-executable("mojo_public_c_system_unittests") {
-  testonly = true
-
-  sources = [
-    "run_all_unittests.cc",
-  ]
-
+mojo_public_test("c_system_unit") {
   deps = [
     "//mojo/public/c/system/tests",
-    "//mojo/system",
-    "//third_party/gtest",
   ]
 }
 
-executable("mojo_public_cpp_bindings_perftests") {
-  testonly = true
-
-  sources = [
-    "run_all_unittests.cc",
+mojo_public_test("cpp_application_unit") {
+  deps = [
+    "//mojo/public/cpp/application/tests",
   ]
+}
 
+mojo_public_test("cpp_bindings_perf") {
   deps = [
     ":test_support",
     "//mojo/public/cpp/bindings/tests:perftests",
-    "//mojo/system",
-    "//third_party/gtest",
   ]
 }
 
-executable("mojo_public_cpp_bindings_unittests") {
-  testonly = true
-
-  sources = [
-    "run_all_unittests.cc",
-  ]
-
+mojo_public_test("cpp_bindings_unit") {
   deps = [
     ":test_support",
     "//mojo/public/cpp/bindings/tests",
-    "//mojo/system",
-    "//third_party/gtest",
   ]
 }
