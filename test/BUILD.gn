@@ -11,6 +11,9 @@ group("test") {
     ":cpp_application_unit",
     ":cpp_bindings_perf",
     ":cpp_bindings_unit",
+    ":cpp_environment_unit",
+    ":cpp_system_unit",
+    ":cpp_utility_unit",
   ]
 }
 
@@ -59,6 +62,24 @@ mojo_public_test("c_system_unit") {
 mojo_public_test("cpp_application_unit") {
   deps = [
     "//mojo/public/cpp/application/tests",
+  ]
+}
+
+mojo_public_test("cpp_environment_unit") {
+  deps = [
+    "//mojo/public/cpp/environment/tests",
+  ]
+}
+
+mojo_public_test("cpp_system_unit") {
+  deps = [
+    "//mojo/public/cpp/system/tests",
+  ]
+}
+
+mojo_public_test("cpp_utility_unit") {
+  deps = [
+    "//mojo/public/cpp/utility/tests",
   ]
 }
 
