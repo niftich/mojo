@@ -8,7 +8,6 @@
 #include <stdlib.h>
 
 #include "lib/ftl/logging.h"
-#include "lib/ftl/memory/make_unique.h"
 #include "mojo/application_manager/application_instance.h"
 #include "mojo/application_manager/shell_impl.h"
 
@@ -56,7 +55,8 @@ ApplicationInstance* ApplicationManager::GetOrStartApplicationInstance(
     return nullptr;
   }
   if (!instance->is_initialized()) {
-    instance->Initialize(ftl::MakeUnique<ShellImpl>(name, this), nullptr, name);
+    instance->Initialize(std::make_unique<ShellImpl>(name, this), nullptr,
+                         name);
     instance->set_connection_error_handler(
         [this, instance]() { table_.StopApplication(instance->name()); });
   }

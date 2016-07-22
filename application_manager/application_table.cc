@@ -6,8 +6,6 @@
 
 #include <utility>
 
-#include "lib/ftl/memory/make_unique.h"
-
 namespace mojo {
 
 ApplicationTable::ApplicationTable() {}
@@ -20,7 +18,7 @@ ApplicationInstance* ApplicationTable::GetOrStartApplication(
   auto result = map_.emplace(std::move(name), nullptr);
   auto it = result.first;
   if (result.second) {
-    auto application = ftl::MakeUnique<ApplicationInstance>();
+    auto application = std::make_unique<ApplicationInstance>();
     if (!application->Start(manager, it->first)) {
       map_.erase(it);
       return nullptr;
