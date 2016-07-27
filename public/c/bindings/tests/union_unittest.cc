@@ -21,7 +21,7 @@ TEST(UnionSerializedSize, UnionOfReferences) {
           sizeof(struct mojo_test_StructOfUnionOfReferences), 0,
       },
       {
-          0u, mojo_test_UnionOfReferences_Tag__UNKNOWN__,
+          0u, mojo_test_UnionOfReferences_Tag__UNKNOWN__, {},
       }  // null
   };
 
@@ -53,6 +53,7 @@ TEST(UnionSerializedSize, UnionOfReferences) {
           0u  // version
       },
       13,  // int8
+      {},  // padding
   };
   struct_with_union.u.tag = mojo_test_UnionOfReferences_Tag_dummy_struct;
   struct_with_union.u.data.f_dummy_struct.ptr = &dummy_struct;
