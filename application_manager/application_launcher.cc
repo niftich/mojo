@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <launchpad/launchpad.h>
 #include <magenta/processargs.h>
 #include <magenta/types.h>
 #include <mxio/util.h>
@@ -109,7 +110,7 @@ mtl::UniqueHandle LaunchWithProcess(
   // TODO(abarth): Remove const_cast once MG-185 is fixed.
   char** argv = const_cast<char**>(&path_arg);
   return mtl::UniqueHandle(
-      mxio_start_process_etc(path_arg, 1, argv, index, child_handles, ids));
+      launchpad_launch_basic(path_arg, 1, argv, index, child_handles, ids));
 }
 
 }  // namespace

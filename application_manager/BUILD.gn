@@ -31,4 +31,6 @@ executable("application_manager") {
     "//mojo/services/content_handler/interfaces",
     "//mojo/system:impl",
   ]
+
+  libs = [ "launchpad" ]
 }
