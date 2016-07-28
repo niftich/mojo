@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include "mojo/application_manager/application_manager.h"
-#include "mojo/public/cpp/utility/run_loop.h"
+#include "lib/mtl/tasks/message_loop.h"
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -17,15 +17,12 @@ int main(int argc, char** argv) {
   const char* initial_app = argv[1];
   mojo::ApplicationManager manager;
 
-  mojo::RunLoop loop;
+  mtl::MessageLoop message_loop;
+  message_loop.task_runner()->PostTask([&]() {
+    if (!manager.StartInitialApplication(initial_app))
+      exit(1);
+  });
 
-  loop.PostDelayedTask(
-      [&]() {
-        if (!manager.StartInitialApplication(initial_app))
-          exit(1);
-      },
-      0);
-
-  loop.Run();
+  message_loop.Run();
   return 0;
 }
