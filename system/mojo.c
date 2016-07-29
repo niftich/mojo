@@ -404,10 +404,14 @@ MojoResult MojoBeginWriteData(MojoHandle data_pipe_producer_handle,
     // TODO: Support flags
     return MOJO_RESULT_UNIMPLEMENTED;
   }
+  // TODO(abarth): MojoBeginWriteData doesn't have a way to limit the amount of
+  // virtual memory that it will map.
+  // See https://github.com/domokit/mojo/issues/812
+  mx_size_t requested = UINTPTR_MAX;
   mx_ssize_t result =
       mx_data_pipe_begin_write((mx_handle_t)data_pipe_producer_handle,
                                0u,  // TODO: flags
-                               *buffer_num_bytes, (uintptr_t*)buffer);
+                               requested, (uintptr_t*)buffer);
   if (result < 0) {
     switch (result) {
       case ERR_BAD_HANDLE:
@@ -501,10 +505,14 @@ MojoResult MojoBeginReadData(MojoHandle data_pipe_consumer_handle,
     // TODO: Support flags
     return MOJO_RESULT_UNIMPLEMENTED;
   }
+  // TODO(abarth): MojoBeginReadData doesn't have a way to limit the amount of
+  // virtual memory that it will map.
+  // See https://github.com/domokit/mojo/issues/812
+  mx_size_t requested = UINTPTR_MAX;
   mx_ssize_t result =
       mx_data_pipe_begin_read((mx_handle_t)data_pipe_consumer_handle,
                               0u,  // TODO: flags
-                              *buffer_num_bytes, (uintptr_t*)buffer);
+                              requested, (uintptr_t*)buffer);
   if (result < 0) {
     switch (result) {
       case ERR_INVALID_ARGS:
