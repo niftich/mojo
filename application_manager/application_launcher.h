@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "lib/ftl/macros.h"
-#include "lib/mtl/unique_handle.h"
+#include "lib/mtl/handles/unique_handle.h"
 #include "mojo/public/interfaces/application/application.mojom.h"
 
 namespace mojo {

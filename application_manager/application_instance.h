@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "lib/mtl/unique_handle.h"
+#include "lib/mtl/handles/unique_handle.h"
 #include "mojo/application_manager/shell_impl.h"
 #include "mojo/public/interfaces/application/application.mojom.h"
 #include "mojo/services/content_handler/interfaces/content_handler.mojom.h"

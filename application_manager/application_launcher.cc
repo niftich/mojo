@@ -14,7 +14,12 @@
 #include <magenta/types.h>
 #include <mxio/util.h>
 
+#include "lib/ftl/files/unique_fd.h"
+#include "lib/ftl/logging.h"
+#include "lib/mtl/data_pipe/files.h"
+#include "lib/mtl/tasks/message_loop.h"
 #include "mojo/application_manager/application_manager.h"
+#include "mojo/public/cpp/system/data_pipe.h"
 
 namespace mojo {
 namespace {
@@ -26,6 +31,13 @@ constexpr size_t kMojoSchemeLength = sizeof(kMojoScheme) - 1;
 constexpr char kMojoMagic[] = "#!mojo ";
 constexpr size_t kMojoMagicLength = sizeof(kMojoMagic) - 1;
 constexpr size_t kMaxShebangLength = 2048;
+
+void Ignored(bool success) {
+  // There's not much we can do with this success value. If we didn't succeed in
+  // filling the data pipe with content, that could just mean the content
+  // handler wasn't interested in the data and closed its end of the pipe before
+  // reading all the data.
+}
 
 size_t CloneStdStreams(mx_handle_t* handles, uint32_t* ids) {
   size_t index = 0;
@@ -48,12 +60,11 @@ mojo::InterfaceRequest<mojo::Application> LaunchWithContentHandler(
     ApplicationManager* manager,
     const std::string& path,
     mojo::InterfaceRequest<mojo::Application> request) {
-  int fd = open(path.c_str(), O_RDONLY);
-  if (fd == -1)
+  ftl::UniqueFD fd(open(path.c_str(), O_RDONLY));
+  if (!fd.is_valid())
     return request;
   std::string shebang(kMaxShebangLength, '\0');
-  ssize_t count = read(fd, &shebang[0], shebang.length());
-  close(fd);
+  ssize_t count = read(fd.get(), &shebang[0], shebang.length());
   if (count == -1)
     return request;
   if (shebang.find(kMojoMagic) != 0)
@@ -61,11 +72,18 @@ mojo::InterfaceRequest<mojo::Application> LaunchWithContentHandler(
   size_t newline = shebang.find('\n', kMojoMagicLength);
   if (newline == std::string::npos)
     return request;
+  if (lseek(fd.get(), 0, SEEK_SET) == -1)
+    return request;
   std::string handler =
       shebang.substr(kMojoMagicLength, newline - kMojoMagicLength);
   URLResponsePtr response = URLResponse::New();
   response->status_code = 200;
-  // TODO(abarth): Fill in the data pipe.
+  mojo::DataPipe data_pipe;
+  response->body = std::move(data_pipe.consumer_handle);
+  mtl::CopyFromFileDescriptor(
+      std::move(fd), std::move(data_pipe.producer_handle),
+      // TODO(abarth): Move file tasks to a background thread.
+      mtl::MessageLoop::GetCurrent()->task_runner(), Ignored);
   manager->StartApplicationUsingContentHandler(handler, std::move(response),
                                                std::move(request));
   return nullptr;
