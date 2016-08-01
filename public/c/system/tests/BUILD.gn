@@ -18,8 +18,7 @@ mojo_sdk_source_set("tests") {
     "message_pipe_unittest.cc",
     "result_unittest.cc",
     "time_unittest.cc",
-
-    #"wait_set_unittest.cc",
+    "wait_set_unittest.cc",
     "wait_unittest.cc",
   ]
 
