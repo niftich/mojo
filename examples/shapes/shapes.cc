@@ -60,17 +60,23 @@ class ShapesApp : public mojo::ApplicationImplBase {
       return;
     }
 
-    // TODO(abarth): Enablet this check once info_->format is correct.
-    // if (info_->format != mojo::FramebufferFormat::RGB_565) {
-    //   fprintf(stderr, "Frame buffer format not supported %d\n",
-    //   info_->format);
-    //   mojo::RunLoop::current()->Quit();
-    //   return;
-    // }
-
+    SkColorType sk_color_type;
+    switch (info_->format) {
+      case mojo::FramebufferFormat::RGB_565:
+        sk_color_type = kRGB_565_SkColorType;
+        break;
+      case mojo::FramebufferFormat::ARGB_8888:
+        sk_color_type = kRGBA_8888_SkColorType;
+        break;
+      default:
+        printf("Unknown color type %d\n", info_->format);
+        sk_color_type = kRGB_565_SkColorType;
+        break;
+    }
+    sk_color_type = kRGBA_8888_SkColorType;
     SkImageInfo image_info =
         SkImageInfo::Make(info_->size->width, info_->size->height,
-                          kRGB_565_SkColorType, kPremul_SkAlphaType);
+                          sk_color_type, kPremul_SkAlphaType);
 
     surface_ = SkSurface::MakeRasterDirect(
         image_info, reinterpret_cast<void*>(buffer), row_bytes);

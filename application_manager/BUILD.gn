@@ -31,5 +31,8 @@ executable("application_manager") {
     "//mojo/system:impl",
   ]
 
-  libs = [ "launchpad" ]
+  libs = [
+    "launchpad",
+    "mxio",
+  ]
 }
