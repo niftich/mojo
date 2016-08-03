@@ -47,17 +47,20 @@ fn main() {
         Err(_) => true,
     };
     if mojo_out_dir.is_dir() {
-        match search_output(mojo_out_dir, OsStr::new("libsystem_thunks.a")) {
-            Some(path) => {
-                println!("cargo:rustc-link-search={}", path.display());
+        if !embed {
+            match search_output(mojo_out_dir, OsStr::new("libsystem_thunks.a")) {
+                Some(path) => {
+                    println!("cargo:rustc-link-lib=static=system_thunks");
+                    println!("cargo:rustc-link-search=native={}", path.display());
+                }
+                None => panic!("Failed to find system_thunks."),
             }
-            None => panic!("Failed to find system_thunks."),
-        }
-        if embed {
+        } else {
             match search_output(mojo_out_dir, OsStr::new("librust_embedder.a")) {
                 Some(path) => {
                     println!("cargo:rustc-link-lib=stdc++");
-                    println!("cargo:rustc-link-search={}", path.display());
+                    println!("cargo:rustc-link-lib=static=rust_embedder");
+                    println!("cargo:rustc-link-search=native={}", path.display());
                 }
                 None => panic!("Failed to find rust_embedder."),
             }

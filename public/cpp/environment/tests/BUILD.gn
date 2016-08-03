@@ -27,3 +27,23 @@ mojo_sdk_source_set("tests") {
     "mojo/public/cpp/utility",
   ]
 }
+
+mojo_sdk_source_set("perftests") {
+  testonly = true
+
+  sources = [
+    "run_loop_async_wait_perftest.cc",
+  ]
+
+  deps = [
+    "//third_party/gtest",
+  ]
+
+  mojo_sdk_deps = [
+    "mojo/public/c/environment/tests:perftest_helpers",
+    "mojo/public/cpp/environment:standalone",
+    "mojo/public/cpp/system",
+    "mojo/public/cpp/test_support",
+    "mojo/public/cpp/utility",
+  ]
+}

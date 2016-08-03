@@ -6,7 +6,7 @@
 
 library {{module.name|dot_to_underscore}};
 
-{%- if module.interfaces %}
+{%- if needs_dart_async %}
 import 'dart:async';
 {%- endif %}
 {%- if should_gen_mojom_types %}

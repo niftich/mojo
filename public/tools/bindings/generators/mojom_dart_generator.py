@@ -522,6 +522,11 @@ class Generator(generator.Generator):
                                    self.GetStructsFromMethods() +
                                    self.GetUnions()))
 
+    # True if the binding will need dart:async
+    needs_dart_async = any(any(method.response_parameters is not None
+                               for method in interface.methods)
+                           for interface in self.GetInterfaces())
+
     parameters = {
       "namespace": self.module.namespace,
       "imports": self.GetImports(args),
@@ -540,6 +545,7 @@ class Generator(generator.Generator):
       "service_describer_import": 'import \'%s\' as %s;' % \
         (_service_describer_pkg, _service_describer_pkg_short),
       "has_handles": has_handles,
+      "needs_dart_async": needs_dart_async,
     }
 
     # If this is the mojom types package, clear the import-related params.

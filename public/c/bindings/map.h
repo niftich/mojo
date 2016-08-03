@@ -8,8 +8,10 @@
 #include <stdint.h>
 
 #include "mojo/public/c/bindings/array.h"
-#include "mojo/public/c/bindings/buffer.h"
+#include "mojo/public/c/bindings/lib/type_descriptor.h"
+#include "mojo/public/c/bindings/lib/util.h"
 #include "mojo/public/c/bindings/struct.h"
+#include "mojo/public/c/system/handle.h"
 #include "mojo/public/c/system/macros.h"
 
 MOJO_BEGIN_EXTERN_C
@@ -31,6 +33,13 @@ union MojomMapHeaderPtr {
 };
 MOJO_STATIC_ASSERT(sizeof(union MojomMapHeaderPtr) == 8,
                    "MojomMapHeaderPtr must be 8 bytes.");
+
+MojomValidationResult MojomMap_Validate(
+    const struct MojomTypeDescriptorStruct* in_type_desc,
+    const struct MojomStructHeader* in_struct,
+    uint32_t in_buf_size,
+    uint32_t in_num_handles,
+    struct MojomValidationContext* inout_context);
 
 MOJO_END_EXTERN_C
 

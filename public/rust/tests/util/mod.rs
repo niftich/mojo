@@ -7,11 +7,14 @@
 /// This macro sets up tests by adding in Mojo embedder
 /// initialization.
 macro_rules! tests {
-    ( $(fn $i:ident() $b:block)* ) => {
+    ( $( $( #[ $attr:meta ] )* fn $i:ident() $b:block)* ) => {
         use std::sync::{Once, ONCE_INIT};
         static START: Once = ONCE_INIT;
         $(
             #[test]
+            $(
+            #[ $attr ]
+            )*
             fn $i() {
                 START.call_once(|| unsafe {
                     util::InitializeMojoEmbedder();

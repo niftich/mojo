@@ -19,4 +19,19 @@ union MojomPointer {
 MOJO_STATIC_ASSERT(sizeof(union MojomPointer) == 8,
                    "union MojomPointer must be 8 bytes");
 
+// This struct represents the state we need to keep when validating an encoded
+// mojom type.
+struct MojomValidationContext {
+  // |next_handle_index| is a counter that represents the next-available index
+  // into the handle array. Previous indices have already been used up. This
+  // counter is non-decreasing as it is used throughout validation.
+  uint32_t next_handle_index;
+
+  // As we validate, we keep track of the point where pointers can point to,
+  // since two pointers may not point to the same memory region.
+  char* next_pointer;
+
+  // TODO(vardhan): Include an error string? How big should it be?
+};
+
 #endif  // MOJO_PUBLIC_C_BINDINGS_LIB_UTIL_H_

@@ -36,6 +36,9 @@ _IGNORED_PATTERNS = [
   # TODO: Remove this once Sky no longer generates this warning.
   # dartbug.com/22836
   re.compile(r'.*cannot both be unnamed'),
+
+  # The Dart SDK seems to generate some hints and lints.
+  re.compile(r'.*\/dart-sdk\/'),
 ]
 
 
@@ -66,6 +69,8 @@ def analyze_entrypoints(dart_sdk, entrypoints, args):
   cmd.extend(entrypoints)
   cmd.extend(args)
   cmd.append("--fatal-warnings")
+  cmd.append("--fatal-lints")
+  cmd.append("--fatal-hints")
   errors = analyze_and_filter(cmd)
   if errors is None:
     return 0

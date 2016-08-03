@@ -43,6 +43,8 @@ pub mod types {
     pub type MojoCreateMessagePipeOptionsFlags = u32;
     pub type MojoWriteMessageFlags = u32;
     pub type MojoReadMessageFlags = u32;
+    pub type MojoCreateWaitSetOptionsFlags = u32;
+    pub type MojoWaitSetAddOptionsFlags = u32;
     pub type MojoResultCode = u32;
 }
 
@@ -86,7 +88,21 @@ pub struct MojoCreateMessagePipeOptions {
     pub _align: [u64; 0], // Hack to align struct to 8 byte boundary
 }
 
-#[link(name = "system_thunks")]
+#[repr(C)]
+pub struct MojoCreateWaitSetOptions {
+    pub struct_size: u32,
+    pub flags: MojoCreateWaitSetOptionsFlags,
+    pub _align: [u64; 0], // Hack to align struct to 8 byte boundary
+}
+
+#[repr(C)]
+pub struct MojoWaitSetAddOptions {
+    pub struct_size: u32,
+    pub flags: MojoWaitSetAddOptionsFlags,
+    pub _align: [u64; 0], // Hack to align struct to 8 byte boundary
+}
+
+#[link]
 extern "C" {
     // From //mojo/public/c/system/buffer.h
     pub fn MojoCreateSharedBuffer(options: *const MojoCreateSharedBufferOptions,
@@ -193,4 +209,25 @@ extern "C" {
                         result_index: *mut u32,
                         signals_states: *mut SignalsState)
                         -> MojoResultCode;
+
+    // From //mojo/public/c/system/wait_set.h
+    pub fn MojoCreateWaitSet(options: *const MojoCreateWaitSetOptions,
+                             handle: *mut MojoHandle)
+                             -> MojoResultCode;
+
+    pub fn MojoWaitSetAdd(wait_set_handle: MojoHandle,
+                          handle: MojoHandle,
+                          signals: HandleSignals,
+                          cookie: u64,
+                          options: *const MojoWaitSetAddOptions)
+                          -> MojoResultCode;
+
+    pub fn MojoWaitSetRemove(wait_set_handle: MojoHandle, cookie: u64) -> MojoResultCode;
+
+    pub fn MojoWaitSetWait(wait_set_handle: MojoHandle,
+                           deadline: MojoDeadline,
+                           num_results: *mut u32,
+                           results: *mut WaitSetResult,
+                           max_results: *mut u32)
+                           -> MojoResultCode;
 }

@@ -49,6 +49,7 @@ template("mojo_public_test") {
 
 mojo_public_test("c_bindings_unit") {
   deps = [
+    ":test_support",
     "//mojo/public/c/bindings/tests",
   ]
 }

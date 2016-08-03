@@ -10,6 +10,7 @@ pub mod core;
 pub mod data_pipe;
 pub mod message_pipe;
 pub mod shared_buffer;
+pub mod wait_set;
 
 // In order to keep the interface clean, we re-export basic Mojo and handle
 // types and traits here in the system module.

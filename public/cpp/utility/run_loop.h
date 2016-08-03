@@ -12,43 +12,50 @@
 #include "mojo/public/cpp/bindings/callback.h"
 #include "mojo/public/cpp/system/handle.h"
 #include "mojo/public/cpp/system/macros.h"
-#include "mojo/public/cpp/system/message_pipe.h"
+#include "mojo/public/cpp/system/wait_set.h"
+#include "mojo/public/cpp/utility/run_loop_handler.h"
 
 namespace mojo {
 
-class RunLoopHandler;
-
-// Watches handles for signals and calls event handlers when they occur. Also
-// executes delayed tasks. This class should only be used by a single thread.
+// Run loop (a.k.a. message loop): watches handles for signals and calls
+// handlers when they occur; can also execute posted (delayed) tasks. This class
+// is not thread-safe.
 class RunLoop {
  public:
   RunLoop();
   ~RunLoop();
 
-  // Returns the RunLoop for the current thread. Returns null if not yet
-  // created.
+  // Returns the RunLoop for the current thread or null if not yet created.
   static RunLoop* current();
 
-  // Registers a RunLoopHandler for the specified handle. It is an error to
-  // register more than one handler for a handle, and crashes the process.
+  // Registers a RunLoopHandler for the specified handle. Returns an |Id|
   //
   // The handler's OnHandleReady() method is invoked after one of the signals in
   // |handle_signals| occurs. Note that the handler remains registered until
   // explicitly removed or an error occurs.
   //
   // The handler's OnHandleError() method is invoked if the deadline elapses, an
-  // error is detected, or the RunLoop is being destroyed. The handler is
-  // automatically unregistered before calling OnHandleError(), so it will not
-  // receive any further notifications.
-  void AddHandler(RunLoopHandler* handler,
-                  const Handle& handle,
-                  MojoHandleSignals handle_signals,
-                  MojoDeadline deadline);
-  void RemoveHandler(const Handle& handle);
-  bool HasHandler(const Handle& handle) const;
+  // error is detected, or the RunLoop is being destroyed (with result
+  // MOJO_RESULT_ABORTED in this case). The handler is automatically
+  // unregistered before calling OnHandleError(), so it will not receive any
+  // further notifications.
+  //
+  // A handler may call AddHandler() again in both OnHandleReady() and
+  // OnHandleError(). Warning: If OnHandleError() was called due to the RunLoop
+  // being destroyed, the newly-added handler's OnHandleError() will also be
+  // called; this may lead to an infinite loop if it again calls AddHandler() ad
+  // infinitum.
+  RunLoopHandler::Id AddHandler(RunLoopHandler* handler,
+                                const Handle& handle,
+                                MojoHandleSignals handle_signals,
+                                MojoDeadline deadline);
+  void RemoveHandler(RunLoopHandler::Id id);
 
-  // Runs the loop servicing handles and tasks as they are ready. This returns
-  // when Quit() is invoked, or there are no more handles nor tasks.
+  // Adds a task to be performed after delay has elapsed.
+  void PostDelayedTask(const Closure& task, MojoTimeTicks delay);
+
+  // Runs the loop servicing handles and tasks as they become ready. Returns
+  // when Quit() is invoked, or there are no more handles or tasks.
   void Run();
 
   // Runs the loop servicing any handles and tasks that are ready. Does not wait
@@ -58,90 +65,115 @@ class RunLoop {
 
   void Quit();
 
-  // Adds a task to be performed after delay has elapsed. Must be posted to the
-  // current thread's RunLoop.
-  void PostDelayedTask(const Closure& task, MojoTimeTicks delay);
+  // Returns the number of registered handlers. (This is mostly used for
+  // testing.)
+  size_t num_handlers() const { return handlers_.size(); }
 
  private:
-  struct RunState;
+  static constexpr MojoTimeTicks kInvalidTimeTicks = 0;
 
-  // Contains the data needed to track a request to AddHandler().
-  struct HandlerData {
-    HandlerData()
-        : handler(nullptr),
-          handle_signals(MOJO_HANDLE_SIGNAL_NONE),
-          deadline(0),
-          id(0) {}
+  // Contains the information that was passed to |AddHandler()|. These are
+  // stored in |handlers|, which is a map from |RunLoopHandler::Id|s
+  // (generated/returned by |AddHandler()| to |HandlerInfo|s. Each entry in
+  // |handlers_| also has a corresponding entry in |wait_set_| (with cookie the
+  // |RunLoopHandler::Id|).
+  struct HandlerInfo {
+    HandlerInfo(RunLoopHandler* handler,
+                MojoHandleSignals handle_signals,
+                MojoTimeTicks absolute_deadline)
+        : handler(handler),
+          handle_signals(handle_signals),
+          absolute_deadline(absolute_deadline) {}
 
     RunLoopHandler* handler;
     MojoHandleSignals handle_signals;
-    MojoTimeTicks deadline;
-    // See description of |RunLoop::next_handler_id_| for details.
-    int id;
+    // |kInvalidTimeTicks| means forever/no deadline/indefinite.
+    MojoTimeTicks absolute_deadline;
   };
+  using IdToHandlerInfoMap = std::map<RunLoopHandler::Id, HandlerInfo>;
 
-  typedef std::map<Handle, HandlerData> HandleToHandlerData;
+  // Contains information about a handler with a deadline. These are stored in
+  // the |handler_deadlines_| priority queue (with the earliest/lowest
+  // |RunLoopHandler::Id| at the top). If |id| is not in |handlers_|, then this
+  // deadline is no longer valid (i.e., is stale).
+  struct HandlerDeadlineInfo {
+    HandlerDeadlineInfo(RunLoopHandler::Id id, MojoTimeTicks absolute_deadline)
+        : id(id), absolute_deadline(absolute_deadline) {}
 
-  // Used for NotifyHandlers to specify whether HandlerData's |deadline|
-  // should be checked prior to notifying.
-  enum CheckDeadline { CHECK_DEADLINE, IGNORE_DEADLINE };
+    // Needed to be in a priority queue. Note that |std::priority_queue<>|'s top
+    // is the "greatest" element, whereas we want the earliest.
+    bool operator<(const HandlerDeadlineInfo& other) const {
+      return (absolute_deadline == other.absolute_deadline)
+                 ? id < other.id
+                 : absolute_deadline > other.absolute_deadline;
+    }
 
-  // Mode of operation of the run loop.
-  enum RunMode { UNTIL_EMPTY, UNTIL_IDLE };
+    RunLoopHandler::Id id;
+    MojoTimeTicks absolute_deadline;
+  };
+  using HandlerDeadlineQueue = std::priority_queue<HandlerDeadlineInfo>;
 
-  // Runs the loop servicing any handles and tasks that are ready. If
-  // |run_mode| is |UNTIL_IDLE|, does not wait for handles or tasks to become
-  // ready before returning. Returns early if Quit() is invoked.
-  void RunInternal(RunMode run_mode);
+  // Contains information about a task posted using |PostDelayedTask()|. (Even
+  // though tasks are not handlers, we also assign them |RunLoopHandler::Id|s
+  // from the same namespace.) These are stored in the |delayed_tasks_| priority
+  // queue (with the earliest/lowest |RunLoopHandler::Id| at the top).
+  struct DelayedTaskInfo {
+    DelayedTaskInfo(RunLoopHandler::Id id,
+                    const Closure& task,
+                    MojoTimeTicks absolute_run_time);
+    ~DelayedTaskInfo();
 
-  // Do one unit of delayed work, if eligible. Returns true is a task was run.
-  bool DoDelayedWork();
+    bool operator<(const DelayedTaskInfo& other) const {
+      return (absolute_run_time == other.absolute_run_time)
+                 ? id > other.id
+                 : absolute_run_time > other.absolute_run_time;
+    }
 
-  // Waits for a handle to be ready or until the next task must be run. Returns
-  // after servicing at least one handle (or there are no more handles) unless
-  // a task must be run or |non_blocking| is true, in which case it will also
-  // return if no task is registered and servicing at least one handle would
-  // require blocking. Returns true if a RunLoopHandler was notified.
-  bool Wait(bool non_blocking);
-
-  // Notifies handlers of |error|.  If |check| == CHECK_DEADLINE, this will
-  // only notify handlers whose deadline has expired and skips the rest.
-  // Returns true if a RunLoopHandler was notified.
-  bool NotifyHandlers(MojoResult error, CheckDeadline check);
-
-  // Sets up the state needed to pass to WaitMany().
-  void SetUpWaitState(bool non_blocking);
-
-  HandleToHandlerData handler_data_;
-
-  // If non-null we're running (inside Run()). Member references a value on the
-  // stack.
-  RunState* run_state_;
-
-  // An ever increasing value assigned to each HandlerData::id. Used to detect
-  // uniqueness while notifying. That is, while notifying expired timers we copy
-  // |handler_data_| and only notify handlers whose id match. If the id does not
-  // match it means the handler was removed then added so that we shouldn't
-  // notify it.
-  int next_handler_id_;
-
-  struct PendingTask {
-    PendingTask(const Closure& task,
-                MojoTimeTicks runtime,
-                uint64_t sequence_number);
-    ~PendingTask();
-
-    bool operator<(const PendingTask& other) const;
-
+    RunLoopHandler::Id id;
     Closure task;
-    MojoTimeTicks run_time;
-    uint64_t sequence_number;
+    MojoTimeTicks absolute_run_time;
   };
-  // An ever-increasing sequence number attached to each pending task in order
-  // to preserve relative order of tasks posted at the 'same' time.
-  uint64_t next_sequence_number_;
-  typedef std::priority_queue<PendingTask> DelayedTaskQueue;
+  using DelayedTaskQueue = std::priority_queue<DelayedTaskInfo>;
+
+  // Inside of |Run()|/|RunUntilIdle()| (i.e., really in |RunInternal()|), we
+  // have one of these on the stack. |current_run_state_| points to the current
+  // one. (This is needed to handle nested execution.)
+  struct RunState;
+
+  // Helper for |Run()| and |RunUntilIdle()|, which loops and executes delayed
+  // tasks and handlers as handles become "ready". It will if:
+  //   - there are no more tasks or registered handlers,
+  //   - |Quit()| is called, or
+  //   - no work is done in a given iteration if |quit_when_idle| is true.
+  void RunInternal(bool quit_when_idle);
+
+  // Executes one iteration of the run loop. Returns true if the run loop should
+  // continue.
+  bool DoIteration(bool quit_when_idle);
+
+  // Notifies handlers corresponding to the wait results in |results| (which
+  // should not be empty). Returns true if work was done (i.e., any handler was
+  // called).
+  bool NotifyResults(const std::vector<MojoWaitSetResult>& results);
+
+  // Notifies any handlers with a deadline up to |absolute_deadline| was that
+  // their deadline was exceeded. Returns true if work was done (i.e., any
+  // handler was called).
+  bool NotifyHandlersDeadlineExceeded(MojoTimeTicks absolute_deadline);
+
+  // Calculates the absolute deadline (to be turned into a relative deadline)
+  // for the wait set wait. This should only be called if |handlers_| is
+  // nonempty. Returns |kInvalidTimeTicks| for "forever"/indefinite. Sets
+  // |*is_delayed_task| to true if the deadline is for a delayed task.
+  MojoTimeTicks CalculateAbsoluteDeadline(bool* is_delayed_task);
+
+  RunLoopHandler::Id next_id_ = 1u;
+  IdToHandlerInfoMap handlers_;
+  ScopedWaitSetHandle wait_set_;
+  HandlerDeadlineQueue handler_deadlines_;
   DelayedTaskQueue delayed_tasks_;
+
+  RunState* current_run_state_ = nullptr;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(RunLoop);
 };

@@ -41,7 +41,11 @@ class {{struct|name}} extends bindings.Struct {
     }
     {{struct|name}} result = new {{struct|name}}();
 
+{%- if struct.bytes %}
     var mainDataHeader = bindings.Struct.checkVersion(decoder0, kVersions);
+{%- else %}
+    bindings.Struct.checkVersion(decoder0, kVersions);
+{%- endif %}
 {%- for byte in struct.bytes %}
 {%-   for packed_field in byte.packed_fields %}
     if (mainDataHeader.version >= {{packed_field.min_version}}) {

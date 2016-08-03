@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include "mojo/public/c/system/handle.h"
 #include "mojo/public/c/system/macros.h"
 
 MOJO_BEGIN_EXTERN_C
@@ -25,6 +26,23 @@ struct MojomBuffer {
 // Allocates |num_bytes| (rounded up to 8 bytes) from |buf|. Returns NULL if
 // there isn't enough space left to allocate.
 void* MojomBuffer_Allocate(struct MojomBuffer* buf, uint32_t num_bytes);
+
+// |MojomHandleBuffer| is used to track handle offsets during serialization.
+// Handles are moved into the |handles| array, and are referred to by index
+// into the array. The user must initialize this struct themselves. See the
+// fields for details.
+struct MojomHandleBuffer {
+  // |handles| must contain enough space to store all the valid MojoHandles
+  // encountered during serialization.
+  MojoHandle* handles;
+  // Size of the |handles| array.
+  uint32_t num_handles;
+  // The number of handles used so far in |handles|. As handles are moved into
+  // |handles|, this counter is incremented. The caller can use it to determine
+  // how many handles were moved into |handles| after serialization. This
+  // counter must be initialized appropriately before the struct can be used.
+  uint32_t num_handles_used;
+};
 
 MOJO_END_EXTERN_C
 

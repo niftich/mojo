@@ -20,8 +20,10 @@ use mojo::system::core;
 use mojo::system::data_pipe;
 use mojo::system::message_pipe;
 use mojo::system::shared_buffer;
+use mojo::system::wait_set;
 
 use std::string::String;
+use std::thread;
 use std::vec::Vec;
 
 tests! {
@@ -230,5 +232,33 @@ tests! {
             assert_eq!(data_goodbye.len(), goodbye.len());
             assert_eq!(String::from_utf8(data_goodbye).unwrap(), "goodbye".to_string());
         }
+    }
+
+    fn wait_set() {
+        let set0 = wait_set::WaitSet::new(wsflags!(Create::None)).unwrap();
+        let set_h = set0.get_native_handle();
+        let set_u = set0.as_untyped();
+        assert_eq!(set_u.get_native_handle(), set_h);
+        let mut set = unsafe { wait_set::WaitSet::from_untyped(set_u) };
+        let (endpt0, endpt1) = message_pipe::create(mpflags!(Create::None)).unwrap();
+        let signals = signals!(Signals::Readable);
+        let flags = wsflags!(Add::None);
+        assert_eq!(set.add(&endpt0, signals, 245, flags), mojo::MojoResult::Okay);
+        assert_eq!(set.add(&endpt0, signals, 245, flags), mojo::MojoResult::AlreadyExists);
+        assert_eq!(set.remove(245), mojo::MojoResult::Okay);
+        assert_eq!(set.remove(245), mojo::MojoResult::NotFound);
+        assert_eq!(set.add(&endpt0, signals, 123, flags), mojo::MojoResult::Okay);
+        thread::spawn(move || {
+            let hello = "hello".to_string().into_bytes();
+            let write_result = endpt1.write(&hello, Vec::new(), mpflags!(Write::None));
+            assert_eq!(write_result, mojo::MojoResult::Okay);
+        });
+        let mut output = Vec::with_capacity(1);
+        let max = set.wait_on_set(system::MOJO_INDEFINITE, &mut output).unwrap();
+        assert_eq!(output.len(), 1);
+        assert_eq!(output[0].cookie(), 123);
+        assert_eq!(output[0].result(), mojo::MojoResult::Okay);
+        assert!(output[0].state().satisfied().is_readable());
+        assert_eq!(max, 1);
     }
 }

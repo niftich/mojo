@@ -50,11 +50,27 @@ MOJO_STATIC_ASSERT(sizeof(struct MojomMessageWithRequestId) == 24,
                    "MojomMessageWithRequestId must be 24 bytes");
 
 // Validates that |in_buf| is a valid mojom message. This does not validate the
-// contents of the message's body, only the message header.
+// contents of the message's body, only the message header. This function does
+// not validate whether a message should be a kind of request.
 // |in_buf|: can be a MojomMessage or a MojomMessageWithRequestId.
 // |in_buf_size|: number of bytes in |in_buf|.
 MojomValidationResult MojomMessage_ValidateHeader(const void* in_buf,
                                                   uint32_t in_buf_size);
+
+// Validates that the given message is a request expecting a response. Assumes
+// that the message is already validated by MojomMessage_ValidateHeader().
+MojomValidationResult MojomMessage_ValidateRequestExpectingResponse(
+    const void* in_buf);
+
+// Validates that the given message is a request which isn't expecting a
+// response. Assumes that the message is already validated by
+// MojomMessage_ValidateHeader().
+MojomValidationResult MojomMessage_ValidateRequestWithoutResponse(
+    const void* in_buf);
+
+// Validates that the given message is a response. Assumes taht the message is
+// already validated by MojomMessage_ValidateHeader().
+MojomValidationResult MojomMessage_ValidateResponse(const void* in_buf);
 
 MOJO_END_EXTERN_C
 

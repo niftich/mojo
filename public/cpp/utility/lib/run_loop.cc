@@ -8,6 +8,8 @@
 #include <pthread.h>
 
 #include <algorithm>
+#include <limits>
+#include <utility>
 #include <vector>
 
 #include "mojo/public/c/system/macros.h"
@@ -18,7 +20,10 @@
 namespace mojo {
 namespace {
 
-const MojoTimeTicks kInvalidTimeTicks = static_cast<MojoTimeTicks>(0);
+// The initial and maximum number of results that we'll accept from
+// |WaitSetWait()|. TODO(vtl): I just made up these numbers.
+constexpr uint32_t kInitialWaitSetNumResults = 16u;
+constexpr uint32_t kMaximumWaitSetNumResults = 256u;
 
 pthread_key_t g_current_run_loop_key;
 
@@ -43,29 +48,50 @@ void SetCurrentRunLoop(RunLoop* run_loop) {
   assert(!error);
 }
 
-// State needed for one iteration of WaitMany().
-struct WaitState {
-  std::vector<Handle> handles;
-  std::vector<MojoHandleSignals> handle_signals;
-  MojoDeadline deadline = MOJO_DEADLINE_INDEFINITE;
-};
-
 }  // namespace
+
+RunLoop::DelayedTaskInfo::DelayedTaskInfo(RunLoopHandler::Id id,
+                                          const Closure& task,
+                                          MojoTimeTicks absolute_run_time)
+    : id(id), task(task), absolute_run_time(absolute_run_time) {}
+
+RunLoop::DelayedTaskInfo::~DelayedTaskInfo() {}
 
 struct RunLoop::RunState {
   bool should_quit = false;
-  WaitState wait_state;
+  uint32_t results_size = kInitialWaitSetNumResults;
+  std::vector<MojoWaitSetResult> results;
 };
 
-RunLoop::RunLoop()
-    : run_state_(nullptr), next_handler_id_(0), next_sequence_number_(0) {
+// static
+constexpr MojoTimeTicks RunLoop::kInvalidTimeTicks;
+
+RunLoop::RunLoop() {
+  MojoResult result = CreateWaitSet(nullptr, &wait_set_);
+  MOJO_ALLOW_UNUSED_LOCAL(result);
+  assert(result == MOJO_RESULT_OK);
+  assert(wait_set_.is_valid());
+
   assert(!current());
   SetCurrentRunLoop(this);
 }
 
 RunLoop::~RunLoop() {
   assert(current() == this);
-  NotifyHandlers(MOJO_RESULT_ABORTED, IGNORE_DEADLINE);
+
+  // Notify all handlers that they've been aborted. Note that handlers could
+  // conceivably call |RemoveHandler()| (which would be a bit shady, admittedly,
+  // even if we handle it correctly). (They could also call |AddHandler()|,
+  // which would be even shadier; we handle this "correctly", but we may still
+  // end up looping infinitely in that case.)
+  while (!handlers_.empty()) {
+    auto it = handlers_.begin();
+    auto handler = it->second.handler;
+    auto id = it->first;
+    handlers_.erase(it);
+    handler->OnHandleError(id, MOJO_RESULT_ABORTED);
+  }
+
   SetCurrentRunLoop(nullptr);
 }
 
@@ -75,213 +101,296 @@ RunLoop* RunLoop::current() {
   return static_cast<RunLoop*>(pthread_getspecific(g_current_run_loop_key));
 }
 
-void RunLoop::AddHandler(RunLoopHandler* handler,
-                         const Handle& handle,
-                         MojoHandleSignals handle_signals,
-                         MojoDeadline deadline) {
+RunLoopHandler::Id RunLoop::AddHandler(RunLoopHandler* handler,
+                                       const Handle& handle,
+                                       MojoHandleSignals handle_signals,
+                                       MojoDeadline deadline) {
   assert(current() == this);
   assert(handler);
   assert(handle.is_valid());
-  // Assume it's an error if someone tries to reregister an existing handle.
-  assert(0u == handler_data_.count(handle));
-  HandlerData handler_data;
-  handler_data.handler = handler;
-  handler_data.handle_signals = handle_signals;
-  handler_data.deadline =
-      (deadline == MOJO_DEADLINE_INDEFINITE)
-          ? kInvalidTimeTicks
-          : GetTimeTicksNow() + static_cast<MojoTimeTicks>(deadline);
-  handler_data.id = next_handler_id_++;
-  handler_data_[handle] = handler_data;
-}
 
-void RunLoop::RemoveHandler(const Handle& handle) {
-  assert(current() == this);
-  handler_data_.erase(handle);
-}
+  // Generate a |RunLoopHandler::Id|.
+  auto id = next_id_++;
 
-bool RunLoop::HasHandler(const Handle& handle) const {
-  return handler_data_.find(handle) != handler_data_.end();
-}
-
-void RunLoop::Run() {
-  RunInternal(UNTIL_EMPTY);
-}
-
-void RunLoop::RunUntilIdle() {
-  RunInternal(UNTIL_IDLE);
-}
-
-void RunLoop::RunInternal(RunMode run_mode) {
-  assert(current() == this);
-  RunState* old_state = run_state_;
-  RunState run_state;
-  run_state_ = &run_state;
-  for (;;) {
-    bool did_work = DoDelayedWork();
-    if (run_state.should_quit)
-      break;
-    did_work |= Wait(run_mode == UNTIL_IDLE);
-    if (run_state.should_quit)
-      break;
-    if (!did_work && run_mode == UNTIL_IDLE)
-      break;
+  // Calculate the absolute deadline.
+  auto absolute_deadline = kInvalidTimeTicks;  // Default to "forever".
+  static constexpr auto kMaxMojoTimeTicks =
+      std::numeric_limits<MojoTimeTicks>::max();
+  if (deadline <= static_cast<MojoDeadline>(kMaxMojoTimeTicks)) {
+    auto now = GetTimeTicksNow();
+    if (deadline <= static_cast<MojoDeadline>(kMaxMojoTimeTicks - now)) {
+      absolute_deadline = now + static_cast<MojoTimeTicks>(deadline);
+      handler_deadlines_.push(HandlerDeadlineInfo(id, absolute_deadline));
+    }
+    // Else either |deadline| or |now| is so large (hopefully the former) that
+    // |now + deadline| would overflow. We'll take that to mean forever.
   }
-  run_state_ = old_state;
+  // Else |deadline| is either very large (which we may as well take as forever)
+  // or |MOJO_DEADLINE_INDEFINITE| (which is forever).
+
+  // Add an entry to |handlers_|.
+  handlers_.insert(std::make_pair(
+      id, HandlerInfo(handler, handle_signals, absolute_deadline)));
+  // Add an entry to the wait set.
+  MojoResult result =
+      WaitSetAdd(wait_set_.get(), handle, handle_signals, id, nullptr);
+  MOJO_ALLOW_UNUSED_LOCAL(result);
+  assert(result == MOJO_RESULT_OK);
+
+  return id;
 }
 
-bool RunLoop::DoDelayedWork() {
-  MojoTimeTicks now = GetTimeTicksNow();
-  if (!delayed_tasks_.empty() && delayed_tasks_.top().run_time <= now) {
-    PendingTask task = delayed_tasks_.top();
-    delayed_tasks_.pop();
-    task.task.Run();
-    return true;
-  }
-  return false;
-}
-
-void RunLoop::Quit() {
+void RunLoop::RemoveHandler(RunLoopHandler::Id id) {
   assert(current() == this);
-  if (run_state_)
-    run_state_->should_quit = true;
+
+  // Remove the entry from |handlers_|.
+  auto it = handlers_.find(id);
+  if (it == handlers_.end())
+    return;
+  handlers_.erase(it);
+  // Remove the entry from the wait set.
+  MojoResult result = WaitSetRemove(wait_set_.get(), id);
+  MOJO_ALLOW_UNUSED_LOCAL(result);
+  assert(result == MOJO_RESULT_OK);
 }
 
 void RunLoop::PostDelayedTask(const Closure& task, MojoTimeTicks delay) {
   assert(current() == this);
-  MojoTimeTicks run_time = delay + GetTimeTicksNow();
-  delayed_tasks_.push(PendingTask(task, run_time, next_sequence_number_++));
+
+  // Generate a |RunLoopHandler::Id|.
+  auto id = next_id_++;
+
+  // Calculate the absolute run time.
+  auto now = GetTimeTicksNow();
+  assert(delay <= std::numeric_limits<MojoTimeTicks>::max() - now);
+  auto absolute_run_time = now + delay;
+
+  // Add an entry to |delayed_tasks_|.
+  delayed_tasks_.push(DelayedTaskInfo(id, task, absolute_run_time));
 }
 
-bool RunLoop::Wait(bool non_blocking) {
-  SetUpWaitState(non_blocking);
-  WaitState& wait_state = run_state_->wait_state;
+void RunLoop::Run() {
+  RunInternal(false);
+}
 
-  if (wait_state.handles.empty()) {
-    if (delayed_tasks_.empty())
-      Quit();
-    return false;
-  }
+void RunLoop::RunUntilIdle() {
+  RunInternal(true);
+}
 
-  const WaitManyResult wmr =
-      WaitMany(wait_state.handles, wait_state.handle_signals,
-               wait_state.deadline, nullptr);
+void RunLoop::Quit() {
+  assert(current() == this);
 
-  if (!wmr.IsIndexValid()) {
-    assert(wmr.result == MOJO_RESULT_DEADLINE_EXCEEDED);
-    return NotifyHandlers(MOJO_RESULT_DEADLINE_EXCEEDED, CHECK_DEADLINE);
-  }
+  if (current_run_state_)
+    current_run_state_->should_quit = true;
+}
 
-  Handle handle = wait_state.handles[wmr.index];
-  assert(handler_data_.find(handle) != handler_data_.end());
-  RunLoopHandler* handler = handler_data_[handle].handler;
+void RunLoop::RunInternal(bool quit_when_idle) {
+  assert(current() == this);
 
-  switch (wmr.result) {
-    case MOJO_RESULT_OK:
-      handler->OnHandleReady(handle);
-      return true;
-    case MOJO_RESULT_INVALID_ARGUMENT:
-    case MOJO_RESULT_CANCELLED:
-    case MOJO_RESULT_BUSY:
-      // These results indicate a bug in "our" code (e.g., race conditions).
-      assert(false);
-      // Fall through.
-    case MOJO_RESULT_FAILED_PRECONDITION:
-      // Remove the handle first, this way if OnHandleError() tries to remove
-      // the handle our iterator isn't invalidated.
-      handler_data_.erase(handle);
-      handler->OnHandleError(handle, wmr.result);
-      return true;
-    default:
-      assert(false);
+  auto old_run_state = current_run_state_;
+  RunState run_state;
+  current_run_state_ = &run_state;
+
+  while (DoIteration(quit_when_idle))
+    ;  // The work is done in |DoIteration()|.
+
+  current_run_state_ = old_run_state;
+}
+
+bool RunLoop::DoIteration(bool quit_when_idle) {
+  assert(current_run_state_);
+  RunState& run_state = *current_run_state_;
+  assert(!run_state.should_quit);
+
+  bool should_continue = false;
+
+  auto now = GetTimeTicksNow();
+
+  // First, execute any already-enqueued tasks that are ready.
+
+  // This is a fake task that we use to compare to enqueued tasks (if one were
+  // to post a task now with no delay, it'd look like this). This is convenient
+  // since |DelayedTaskInfo| has an |operator<| (used by the priority queue
+  // |delayed_tasks_|).
+  //
+  // We want to execute tasks that are "greater" than |now_task| (i.e.,
+  // |now_task| is less than them) -- this includes all tasks that are currently
+  // ready, but not any newly-posted tasks (i.e., those that are posted as a
+  // result of executing ready tasks).
+  DelayedTaskInfo now_task(next_id_, Closure(), now);
+
+  while (!delayed_tasks_.empty() && now_task < delayed_tasks_.top()) {
+    // We could just execute the task directly from |delayed_tasks_.top()|,
+    // since no newly-posted task should change the top of the priority queue,
+    // but doing the below is more obviously correct.
+    Closure task = delayed_tasks_.top().task;
+    delayed_tasks_.pop();
+    task.Run();
+    should_continue = true;
+
+    if (run_state.should_quit)
       return false;
   }
+
+  // Next, "wait" and deal with handles/handlers.
+
+  if (handlers_.empty())
+    return should_continue;
+
+  // Calculate the deadline for the wait. Don't wait if |quit_when_idle| is
+  // true. Otherwise, the minimum of the earliest delayed task run time and the
+  // earliest handler deadline (or "forever" if there are no delayed tasks and
+  // no handler deadlines). (Warning: |CalculateAbsoluteDeadline()| may return a
+  // deadline earlier than |now|.)
+  bool absolute_deadline_is_for_delayed_task = false;
+  MojoTimeTicks absolute_deadline =
+      quit_when_idle
+          ? now
+          : CalculateAbsoluteDeadline(&absolute_deadline_is_for_delayed_task);
+  MojoDeadline relative_deadline =
+      (absolute_deadline == kInvalidTimeTicks)
+          ? MOJO_DEADLINE_INDEFINITE
+          : static_cast<MojoDeadline>(std::max(now, absolute_deadline) - now);
+
+  run_state.results.resize(run_state.results_size);
+  uint32_t max_results = run_state.results_size;
+  switch (WaitSetWait(wait_set_.get(), relative_deadline,
+                      &current_run_state_->results, &max_results)) {
+    case MOJO_RESULT_OK:
+      // If there were more results than we could accept, try increasing the
+      // number we accept (up to our limit).
+      if (max_results > run_state.results_size) {
+        run_state.results_size =
+            std::min(kMaximumWaitSetNumResults, run_state.results_size * 2u);
+      }
+      should_continue |= NotifyResults(run_state.results);
+      break;
+    case MOJO_RESULT_INVALID_ARGUMENT:
+      assert(false);  // This shouldn't happen.
+      return false;
+    case MOJO_RESULT_CANCELLED:
+      assert(false);  // This shouldn't happen.
+      return false;
+    case MOJO_RESULT_RESOURCE_EXHAUSTED:
+      assert(false);  // Sadness.
+      return false;
+    case MOJO_RESULT_BUSY:
+      assert(false);  // This shouldn't happen.
+      return false;
+    case MOJO_RESULT_DEADLINE_EXCEEDED:
+      should_continue |= NotifyHandlersDeadlineExceeded(absolute_deadline);
+      // If we timed out due for a delayed task, pretend that we did work since
+      // we're not idle yet (there'll be work to do immediately the next time
+      // through the loop).
+      should_continue |= absolute_deadline_is_for_delayed_task;
+      break;
+    default:
+      assert(false);  // This *really* shouldn't happen.
+      return false;
+  }
+
+  if (run_state.should_quit)
+    return false;
+
+  return quit_when_idle ? should_continue : !handlers_.empty();
 }
 
-bool RunLoop::NotifyHandlers(MojoResult error, CheckDeadline check) {
-  bool notified = false;
+MojoTimeTicks RunLoop::CalculateAbsoluteDeadline(bool* is_delayed_task) {
+  assert(!handlers_.empty());
 
-  // Make a copy in case someone tries to add/remove new handlers as part of
-  // notifying.
-  const HandleToHandlerData cloned_handlers(handler_data_);
-  const MojoTimeTicks now(GetTimeTicksNow());
-  for (HandleToHandlerData::const_iterator i = cloned_handlers.begin();
-       i != cloned_handlers.end();
-       ++i) {
-    // Only check deadline exceeded if that's what we're notifying.
-    if (check == CHECK_DEADLINE &&
-        (i->second.deadline == kInvalidTimeTicks || i->second.deadline > now)) {
+  // Default to "forever".
+  MojoTimeTicks absolute_deadline = kInvalidTimeTicks;
+  if (delayed_tasks_.empty()) {
+    *is_delayed_task = false;
+  } else {
+    // If there are delayed tasks, our deadline can be no later than the
+    // earliest run time.
+    absolute_deadline = delayed_tasks_.top().absolute_run_time;
+    *is_delayed_task = true;
+  }
+
+  // Find the earliest handler deadline.
+  while (!handler_deadlines_.empty()) {
+    const HandlerDeadlineInfo& info = handler_deadlines_.top();
+    const auto it = handlers_.find(info.id);
+    // We might have a stale entry at the top. If so, remove it and continue.
+    if (it == handlers_.end()) {
+      handler_deadlines_.pop();
       continue;
     }
 
-    // Since we're iterating over a clone of the handlers, verify the handler
-    // is still valid before notifying.
-    if (handler_data_.find(i->first) == handler_data_.end() ||
-        handler_data_[i->first].id != i->second.id) {
+    if (absolute_deadline == kInvalidTimeTicks ||
+        info.absolute_deadline < absolute_deadline) {
+      absolute_deadline = info.absolute_deadline;
+      *is_delayed_task = false;
+    }
+
+    break;
+  }
+
+  return absolute_deadline;
+}
+
+bool RunLoop::NotifyResults(const std::vector<MojoWaitSetResult>& results) {
+  assert(!results.empty());
+
+  bool did_work = false;
+  for (const auto& result : results) {
+    auto id = result.cookie;
+    auto it = handlers_.find(id);
+    // Though we should find an entry for the first result, a handler that we
+    // invoke may remove other handlers.
+    if (it == handlers_.end())
+      continue;
+
+    auto handler = it->second.handler;
+    handlers_.erase(it);
+    MojoResult r = WaitSetRemove(wait_set_.get(), id);
+    MOJO_ALLOW_UNUSED_LOCAL(r);
+    assert(r == MOJO_RESULT_OK);
+    if (result.wait_result == MOJO_RESULT_OK)
+      handler->OnHandleReady(id);
+    else
+      handler->OnHandleError(id, result.wait_result);
+    did_work = true;
+
+    if (current_run_state_->should_quit)
+      break;
+  }
+  return did_work;
+}
+
+bool RunLoop::NotifyHandlersDeadlineExceeded(MojoTimeTicks absolute_deadline) {
+  assert(!handlers_.empty());
+  assert(absolute_deadline != kInvalidTimeTicks);
+
+  bool did_work = false;
+  while (!handler_deadlines_.empty()) {
+    const HandlerDeadlineInfo& info = handler_deadlines_.top();
+
+    if (info.absolute_deadline > absolute_deadline)
+      break;
+
+    const auto it = handlers_.find(info.id);
+    // Though the top shouldn't be stale, there may be stale entries after it
+    // (with the same deadline). Moreover, previously-run handlers may have
+    // removed yet-to-be-run handlers.
+    if (it == handlers_.end()) {
+      handler_deadlines_.pop();
       continue;
     }
 
-    RunLoopHandler* handler = i->second.handler;
-    handler_data_.erase(i->first);
-    handler->OnHandleError(i->first, error);
-    notified = true;
+    auto handler = it->second.handler;
+    auto id = info.id;
+    handlers_.erase(it);       // Invalidates |it|.
+    handler_deadlines_.pop();  // Invalidates |info|.
+    handler->OnHandleError(id, MOJO_RESULT_DEADLINE_EXCEEDED);
+    did_work = true;
+
+    if (current_run_state_->should_quit)
+      break;
   }
-
-  return notified;
-}
-
-void RunLoop::SetUpWaitState(bool non_blocking) {
-  WaitState& wait_state = run_state_->wait_state;
-
-  MojoTimeTicks min_time = kInvalidTimeTicks;
-  wait_state.handles.resize(handler_data_.size());
-  wait_state.handle_signals.resize(handler_data_.size());
-  size_t i = 0;
-  for (HandleToHandlerData::const_iterator it = handler_data_.begin();
-       it != handler_data_.end(); ++it, i++) {
-    wait_state.handles[i] = it->first;
-    wait_state.handle_signals[i] = it->second.handle_signals;
-    if (!non_blocking && it->second.deadline != kInvalidTimeTicks &&
-        (min_time == kInvalidTimeTicks || it->second.deadline < min_time)) {
-      min_time = it->second.deadline;
-    }
-  }
-  if (!delayed_tasks_.empty()) {
-    MojoTimeTicks delayed_min_time = delayed_tasks_.top().run_time;
-    if (min_time == kInvalidTimeTicks)
-      min_time = delayed_min_time;
-    else
-      min_time = std::min(min_time, delayed_min_time);
-  }
-  if (non_blocking) {
-    wait_state.deadline = static_cast<MojoDeadline>(0);
-  } else if (min_time != kInvalidTimeTicks) {
-    const MojoTimeTicks now = GetTimeTicksNow();
-    if (min_time < now)
-      wait_state.deadline = static_cast<MojoDeadline>(0);
-    else
-      wait_state.deadline = static_cast<MojoDeadline>(min_time - now);
-  }
-}
-
-RunLoop::PendingTask::PendingTask(const Closure& task,
-                                  MojoTimeTicks run_time,
-                                  uint64_t sequence_number)
-    : task(task), run_time(run_time), sequence_number(sequence_number) {
-}
-
-RunLoop::PendingTask::~PendingTask() {
-}
-
-bool RunLoop::PendingTask::operator<(const RunLoop::PendingTask& other) const {
-  if (run_time != other.run_time) {
-    // std::priority_queue<> puts the least element at the end of the queue. We
-    // want the soonest eligible task to be at the head of the queue, so
-    // run_times further in the future are considered lesser.
-    return run_time > other.run_time;
-  }
-
-  return sequence_number > other.sequence_number;
+  return did_work;
 }
 
 }  // namespace mojo

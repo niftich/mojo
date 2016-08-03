@@ -12,10 +12,10 @@ MojomValidationResult MojomMessage_ValidateHeader(const void* in_buf,
                                                   uint32_t in_buf_size) {
   const struct MojomStructHeader* header =
     (const struct MojomStructHeader*)in_buf;
+
   if (in_buf_size < sizeof(struct MojomStructHeader) ||
-      in_buf_size < header->num_bytes) {
-    return MOJOM_VALIDATION_UNEXPECTED_STRUCT_HEADER;
-  }
+      in_buf_size < header->num_bytes)
+    return MOJOM_VALIDATION_ILLEGAL_MEMORY_RANGE;
 
   const struct MojomMessage* msg = (const struct MojomMessage*)in_buf;
   if (header->version == 0u) {
@@ -46,4 +46,29 @@ MojomValidationResult MojomMessage_ValidateHeader(const void* in_buf,
 
   // Accept unknown versions of the message header to be future-proof.
   return MOJOM_VALIDATION_ERROR_NONE;
+}
+
+MojomValidationResult MojomMessage_ValidateRequestExpectingResponse(
+    const void* in_buf) {
+  const struct MojomMessage* msg = (const struct MojomMessage*)in_buf;
+  return (msg->flags & MOJOM_MESSAGE_FLAGS_EXPECTS_RESPONSE)
+             ? MOJOM_VALIDATION_ERROR_NONE
+             : MOJOM_VALIDATION_MESSAGE_HEADER_INVALID_FLAGS;
+}
+
+MojomValidationResult MojomMessage_ValidateRequestWithoutResponse(
+    const void* in_buf) {
+  const struct MojomMessage* msg = (const struct MojomMessage*)in_buf;
+  return (!(msg->flags & MOJOM_MESSAGE_FLAGS_EXPECTS_RESPONSE) &&
+                 !(msg->flags & MOJOM_MESSAGE_FLAGS_IS_RESPONSE))
+             ? MOJOM_VALIDATION_ERROR_NONE
+             : MOJOM_VALIDATION_MESSAGE_HEADER_INVALID_FLAGS;
+}
+
+MojomValidationResult MojomMessage_ValidateResponse(
+    const void* in_buf) {
+  const struct MojomMessage* msg = (const struct MojomMessage*)in_buf;
+  return (msg->flags & MOJOM_MESSAGE_FLAGS_IS_RESPONSE)
+             ? MOJOM_VALIDATION_ERROR_NONE
+             : MOJOM_VALIDATION_MESSAGE_HEADER_INVALID_FLAGS;
 }

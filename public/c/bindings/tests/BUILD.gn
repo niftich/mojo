@@ -13,6 +13,7 @@ mojo_sdk_source_set("tests") {
     "message_unittest.cc",
     "struct_unittest.cc",
     "union_unittest.cc",
+    "validation_unittest.cc",
   ]
 
   deps = [
@@ -21,6 +22,8 @@ mojo_sdk_source_set("tests") {
 
   mojo_sdk_deps = [
     "mojo/public/cpp/bindings/tests:mojo_public_bindings_test_utils",
+    "mojo/public/cpp/bindings/tests:validation_util",
+    "mojo/public/cpp/test_support",
     "mojo/public/cpp/system",
     "mojo/public/c/bindings",
 

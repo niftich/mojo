@@ -35,15 +35,16 @@ pub type InfoFlags = u32;
 pub type MapFlags = u32;
 pub type WriteFlags = u32;
 pub type ReadFlags = u32;
+pub type AddFlags = u32;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-#[repr(u32)]
 /// MojoResult represents anything that can happen
 /// as a result of performing some operation in Mojo.
 ///
 /// It's implementation matches exactly that found in
 /// the Mojo C API so this enum can be used across the
 /// FFI boundary simply by using "as u32".
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(u32)]
 pub enum MojoResult {
     Okay = 0x0,
     Cancelled = 0x1,
@@ -125,8 +126,6 @@ impl fmt::Display for MojoResult {
     }
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Default, PartialEq)]
 /// This tuple struct represents a bit vector configuration of possible
 /// Mojo signals. Used in wait() and wait_many() primarily as a convenience.
 ///
@@ -134,6 +133,8 @@ impl fmt::Display for MojoResult {
 ///     sizeof(HandleSignals) == sizeof(MojoHandleSignals)
 /// If this is ever not the case or there is a way in Rust to ensure that,
 /// this data structure must be updated to reflect that.
+#[repr(C)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub struct HandleSignals(MojoHandleSignals);
 
 impl HandleSignals {
@@ -173,8 +174,6 @@ impl HandleSignals {
     }
 }
 
-#[repr(C)]
-#[derive(Default)]
 /// Represents the signals state of a handle: which signals are satisfied,
 /// and which are satisfiable.
 ///
@@ -182,6 +181,8 @@ impl HandleSignals {
 ///     sizeof(SignalsState) == sizeof(MojoSignalsState) (defined in handle.h)
 /// If this is ever not the case or there is a way in Rust to ensure that,
 /// this data structure must be updated to reflect that.
+#[repr(C)]
+#[derive(Default)]
 pub struct SignalsState {
     satisfied: HandleSignals,
     satisfiable: HandleSignals,
@@ -213,12 +214,12 @@ impl SignalsState {
     }
 }
 
-#[repr(u32)]
 /// The different signals options that can be
 /// used by wait() and wait_many(). You may use
 /// these directly to build a bit-vector, but
 /// the signals! macro will already do it for you.
 /// See the root of the library for more information.
+#[repr(u32)]
 pub enum Signals {
     None = 0,
     /// Wait for the handle to be readable
@@ -239,4 +240,39 @@ pub enum Signals {
     /// Wait for the handle to allow for at least
     /// some data to be writable
     WriteThreshold = 1 << 4,
+}
+
+/// The result struct used by the wait_set module
+/// to return wait result information. Should remain
+/// semantically identical to the implementation of
+/// this struct in wait_set.h in the C bindings.
+///
+/// This struct should never be constructed by anything
+/// but the Mojo system in MojoWaitSetWait.
+#[repr(C)]
+pub struct WaitSetResult {
+    cookie: u64,
+    result: MojoResultCode,
+    reserved: u32,
+    signals_state: SignalsState,
+    _align: [u64; 0], // Hack to align struct to 8 byte boundary
+}
+
+impl WaitSetResult {
+    /// Getter for the cookie corresponding to the handle
+    /// which just finished waiting.
+    pub fn cookie(&self) -> u64 {
+        self.cookie
+    }
+
+    /// Getter for the wait result.
+    pub fn result(&self) -> MojoResult {
+        MojoResult::from_code(self.result)
+    }
+
+    /// Getter for the signals state that comes with any
+    /// wait result.
+    pub fn state(&self) -> &SignalsState {
+        &self.signals_state
+    }
 }

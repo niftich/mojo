@@ -60,7 +60,7 @@ std::ostream& operator<<(std::ostream& os, const mojo::Map<Key, Value>& map) {
 // assuming there exists an operator<< overload that accepts a const
 // reference to the object.
 template <typename T, typename = typename T::Data_>
-auto operator<<(std::ostream& os, const T* value) -> decltype(os << *value) {
+std::ostream& operator<<(std::ostream& os, const T* value) {
   return value ? os << *value : os << "null";
 }
 template <typename T>

@@ -17,11 +17,7 @@ namespace {
 
 class TestRunLoopHandler : public RunLoopHandler {
  public:
-  TestRunLoopHandler()
-      : ready_count_(0),
-        error_count_(0),
-        last_error_result_(MOJO_RESULT_OK) {
-  }
+  TestRunLoopHandler() {}
   ~TestRunLoopHandler() override {}
 
   void clear_ready_count() { ready_count_ = 0; }
@@ -30,19 +26,38 @@ class TestRunLoopHandler : public RunLoopHandler {
   void clear_error_count() { error_count_ = 0; }
   int error_count() const { return error_count_; }
 
+  void clear_expected_handler_id() { have_expected_handler_id_ = false; }
+  void set_expected_handler_id(Id id) {
+    have_expected_handler_id_ = true;
+    expected_handler_id_ = id;
+  }
+
   MojoResult last_error_result() const { return last_error_result_; }
 
   // RunLoopHandler:
-  void OnHandleReady(const Handle& handle) override { ready_count_++; }
-  void OnHandleError(const Handle& handle, MojoResult result) override {
+  void OnHandleReady(Id id) override {
+    ready_count_++;
+    if (have_expected_handler_id_) {
+      EXPECT_EQ(expected_handler_id_, id);
+      clear_expected_handler_id();
+    }
+  }
+
+  void OnHandleError(Id id, MojoResult result) override {
     error_count_++;
     last_error_result_ = result;
+    if (have_expected_handler_id_) {
+      EXPECT_EQ(expected_handler_id_, id);
+      clear_expected_handler_id();
+    }
   }
 
  private:
-  int ready_count_;
-  int error_count_;
-  MojoResult last_error_result_;
+  int ready_count_ = 0;
+  int error_count_ = 0;
+  bool have_expected_handler_id_ = false;
+  Id expected_handler_id_ = 0u;
+  MojoResult last_error_result_ = MOJO_RESULT_OK;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(TestRunLoopHandler);
 };
@@ -61,9 +76,9 @@ class RemoveOnReadyRunLoopHandler : public TestRunLoopHandler {
   void set_run_loop(RunLoop* run_loop) { run_loop_ = run_loop; }
 
   // RunLoopHandler:
-  void OnHandleReady(const Handle& handle) override {
-    run_loop_->RemoveHandler(handle);
-    TestRunLoopHandler::OnHandleReady(handle);
+  void OnHandleReady(Id id) override {
+    run_loop_->RemoveHandler(id);
+    TestRunLoopHandler::OnHandleReady(id);
   }
 
  private:
@@ -80,29 +95,31 @@ TEST(RunLoopTest, HandleReady) {
 
   RunLoop run_loop;
   handler.set_run_loop(&run_loop);
-  run_loop.AddHandler(&handler, test_pipe.handle0.get(),
-                      MOJO_HANDLE_SIGNAL_READABLE, MOJO_DEADLINE_INDEFINITE);
+  auto id = run_loop.AddHandler(&handler, test_pipe.handle0.get(),
+                                MOJO_HANDLE_SIGNAL_READABLE,
+                                MOJO_DEADLINE_INDEFINITE);
+  handler.set_expected_handler_id(id);
   run_loop.Run();
   EXPECT_EQ(1, handler.ready_count());
   EXPECT_EQ(0, handler.error_count());
-  EXPECT_FALSE(run_loop.HasHandler(test_pipe.handle0.get()));
+  EXPECT_EQ(0u, run_loop.num_handlers());
 }
 
 class QuitOnReadyRunLoopHandler : public TestRunLoopHandler {
  public:
-  QuitOnReadyRunLoopHandler() : run_loop_(nullptr) {}
+  QuitOnReadyRunLoopHandler() {}
   ~QuitOnReadyRunLoopHandler() override {}
 
   void set_run_loop(RunLoop* run_loop) { run_loop_ = run_loop; }
 
   // RunLoopHandler:
-  void OnHandleReady(const Handle& handle) override {
+  void OnHandleReady(Id id) override {
     run_loop_->Quit();
-    TestRunLoopHandler::OnHandleReady(handle);
+    TestRunLoopHandler::OnHandleReady(id);
   }
 
  private:
-  RunLoop* run_loop_;
+  RunLoop* run_loop_ = nullptr;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(QuitOnReadyRunLoopHandler);
 };
@@ -113,31 +130,44 @@ TEST(RunLoopTest, QuitFromReady) {
   MessagePipe test_pipe;
   EXPECT_TRUE(test::WriteTextMessage(test_pipe.handle1.get(), std::string()));
 
-  RunLoop run_loop;
-  handler.set_run_loop(&run_loop);
-  run_loop.AddHandler(&handler, test_pipe.handle0.get(),
-                      MOJO_HANDLE_SIGNAL_READABLE, MOJO_DEADLINE_INDEFINITE);
-  run_loop.Run();
-  EXPECT_EQ(1, handler.ready_count());
-  EXPECT_EQ(0, handler.error_count());
-  EXPECT_TRUE(run_loop.HasHandler(test_pipe.handle0.get()));
+  RunLoopHandler::Id id2;
+  {
+    RunLoop run_loop;
+    handler.set_run_loop(&run_loop);
+    auto id1 = run_loop.AddHandler(&handler, test_pipe.handle0.get(),
+                                   MOJO_HANDLE_SIGNAL_READABLE,
+                                   MOJO_DEADLINE_INDEFINITE);
+    handler.set_expected_handler_id(id1);
+    // Quitting should keep this handler.
+    id2 = run_loop.AddHandler(&handler, test_pipe.handle1.get(),
+                              MOJO_HANDLE_SIGNAL_READABLE,
+                              MOJO_DEADLINE_INDEFINITE);
+    EXPECT_NE(id2, id1);
+    run_loop.Run();
+    EXPECT_EQ(1, handler.ready_count());
+    EXPECT_EQ(0, handler.error_count());
+    EXPECT_EQ(1u, run_loop.num_handlers());
+
+    // Destroying the RunLoop should call the second handler's OnHandleError().
+    handler.set_expected_handler_id(id2);
+  }
 }
 
 class QuitOnErrorRunLoopHandler : public TestRunLoopHandler {
  public:
-  QuitOnErrorRunLoopHandler() : run_loop_(nullptr) {}
+  QuitOnErrorRunLoopHandler() {}
   ~QuitOnErrorRunLoopHandler() override {}
 
   void set_run_loop(RunLoop* run_loop) { run_loop_ = run_loop; }
 
   // RunLoopHandler:
-  void OnHandleError(const Handle& handle, MojoResult result) override {
+  void OnHandleError(Id id, MojoResult result) override {
     run_loop_->Quit();
-    TestRunLoopHandler::OnHandleError(handle, result);
+    TestRunLoopHandler::OnHandleError(id, result);
   }
 
  private:
-  RunLoop* run_loop_;
+  RunLoop* run_loop_ = nullptr;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(QuitOnErrorRunLoopHandler);
 };
@@ -148,14 +178,15 @@ TEST(RunLoopTest, QuitWhenDeadlineExpired) {
   MessagePipe test_pipe;
   RunLoop run_loop;
   handler.set_run_loop(&run_loop);
-  run_loop.AddHandler(&handler, test_pipe.handle0.get(),
-                      MOJO_HANDLE_SIGNAL_READABLE,
-                      static_cast<MojoDeadline>(10000));
+  auto id = run_loop.AddHandler(&handler, test_pipe.handle0.get(),
+                                MOJO_HANDLE_SIGNAL_READABLE,
+                                static_cast<MojoDeadline>(10000));
+  handler.set_expected_handler_id(id);
   run_loop.Run();
   EXPECT_EQ(0, handler.ready_count());
   EXPECT_EQ(1, handler.error_count());
   EXPECT_EQ(MOJO_RESULT_DEADLINE_EXCEEDED, handler.last_error_result());
-  EXPECT_FALSE(run_loop.HasHandler(test_pipe.handle0.get()));
+  EXPECT_EQ(0u, run_loop.num_handlers());
 }
 
 // Test that handlers are notified of loop destruction.
@@ -164,10 +195,10 @@ TEST(RunLoopTest, Destruction) {
   MessagePipe test_pipe;
   {
     RunLoop run_loop;
-    run_loop.AddHandler(&handler,
-                        test_pipe.handle0.get(),
-                        MOJO_HANDLE_SIGNAL_READABLE,
-                        MOJO_DEADLINE_INDEFINITE);
+    auto id = run_loop.AddHandler(&handler, test_pipe.handle0.get(),
+                                  MOJO_HANDLE_SIGNAL_READABLE,
+                                  MOJO_DEADLINE_INDEFINITE);
+    handler.set_expected_handler_id(id);
   }
   EXPECT_EQ(1, handler.error_count());
   EXPECT_EQ(MOJO_RESULT_ABORTED, handler.last_error_result());
@@ -175,22 +206,22 @@ TEST(RunLoopTest, Destruction) {
 
 class RemoveManyRunLoopHandler : public TestRunLoopHandler {
  public:
-  RemoveManyRunLoopHandler() : run_loop_(nullptr) {}
+  RemoveManyRunLoopHandler() {}
   ~RemoveManyRunLoopHandler() override {}
 
   void set_run_loop(RunLoop* run_loop) { run_loop_ = run_loop; }
-  void add_handle(const Handle& handle) { handles_.push_back(handle); }
+  void add_id(Id id) { ids_.push_back(id); }
 
   // RunLoopHandler:
-  void OnHandleError(const Handle& handle, MojoResult result) override {
-    for (size_t i = 0; i < handles_.size(); i++)
-      run_loop_->RemoveHandler(handles_[i]);
-    TestRunLoopHandler::OnHandleError(handle, result);
+  void OnHandleError(Id id, MojoResult result) override {
+    for (size_t i = 0; i < ids_.size(); i++)
+      run_loop_->RemoveHandler(ids_[i]);
+    TestRunLoopHandler::OnHandleError(id, result);
   }
 
  private:
-  std::vector<Handle> handles_;
-  RunLoop* run_loop_;
+  std::vector<Id> ids_;
+  RunLoop* run_loop_ = nullptr;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(RemoveManyRunLoopHandler);
 };
@@ -203,20 +234,16 @@ TEST(RunLoopTest, MultipleHandleDestruction) {
   {
     RunLoop run_loop;
     odd_handler.set_run_loop(&run_loop);
-    odd_handler.add_handle(test_pipe1.handle0.get());
-    odd_handler.add_handle(test_pipe3.handle0.get());
-    run_loop.AddHandler(&odd_handler,
-                        test_pipe1.handle0.get(),
-                        MOJO_HANDLE_SIGNAL_READABLE,
-                        MOJO_DEADLINE_INDEFINITE);
-    run_loop.AddHandler(&even_handler,
-                        test_pipe2.handle0.get(),
-                        MOJO_HANDLE_SIGNAL_READABLE,
-                        MOJO_DEADLINE_INDEFINITE);
-    run_loop.AddHandler(&odd_handler,
-                        test_pipe3.handle0.get(),
-                        MOJO_HANDLE_SIGNAL_READABLE,
-                        MOJO_DEADLINE_INDEFINITE);
+    odd_handler.add_id(run_loop.AddHandler(
+        &odd_handler, test_pipe1.handle0.get(), MOJO_HANDLE_SIGNAL_READABLE,
+        MOJO_DEADLINE_INDEFINITE));
+    auto even_id = run_loop.AddHandler(&even_handler, test_pipe2.handle0.get(),
+                                       MOJO_HANDLE_SIGNAL_READABLE,
+                                       MOJO_DEADLINE_INDEFINITE);
+    even_handler.set_expected_handler_id(even_id);
+    odd_handler.add_id(run_loop.AddHandler(
+        &odd_handler, test_pipe3.handle0.get(), MOJO_HANDLE_SIGNAL_READABLE,
+        MOJO_DEADLINE_INDEFINITE));
   }
   EXPECT_EQ(1, odd_handler.error_count());
   EXPECT_EQ(1, even_handler.error_count());
@@ -226,21 +253,30 @@ TEST(RunLoopTest, MultipleHandleDestruction) {
 
 class AddHandlerOnErrorHandler : public TestRunLoopHandler {
  public:
-  AddHandlerOnErrorHandler() : run_loop_(nullptr) {}
+  AddHandlerOnErrorHandler() {}
   ~AddHandlerOnErrorHandler() override {}
 
   void set_run_loop(RunLoop* run_loop) { run_loop_ = run_loop; }
+  void set_handle(Handle handle) { handle_ = handle; }
 
   // RunLoopHandler:
-  void OnHandleError(const Handle& handle, MojoResult result) override {
-    run_loop_->AddHandler(this, handle,
-                          MOJO_HANDLE_SIGNAL_READABLE,
-                          MOJO_DEADLINE_INDEFINITE);
-    TestRunLoopHandler::OnHandleError(handle, result);
+  void OnHandleError(Id id, MojoResult result) override {
+    EXPECT_EQ(MOJO_RESULT_ABORTED, result);
+
+    TestRunLoopHandler::OnHandleError(id, result);
+
+    if (!on_handle_error_was_called_) {
+      on_handle_error_was_called_ = true;
+      auto id = run_loop_->AddHandler(
+          this, handle_, MOJO_HANDLE_SIGNAL_READABLE, MOJO_DEADLINE_INDEFINITE);
+      set_expected_handler_id(id);
+    }
   }
 
  private:
-  RunLoop* run_loop_;
+  RunLoop* run_loop_ = nullptr;
+  bool on_handle_error_was_called_ = false;
+  Handle handle_;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(AddHandlerOnErrorHandler);
 };
@@ -251,13 +287,13 @@ TEST(RunLoopTest, AddHandlerOnError) {
   {
     RunLoop run_loop;
     handler.set_run_loop(&run_loop);
-    run_loop.AddHandler(&handler,
-                        test_pipe.handle0.get(),
-                        MOJO_HANDLE_SIGNAL_READABLE,
-                        MOJO_DEADLINE_INDEFINITE);
+    handler.set_handle(test_pipe.handle0.get());
+    auto id = run_loop.AddHandler(&handler, test_pipe.handle0.get(),
+                                  MOJO_HANDLE_SIGNAL_READABLE,
+                                  MOJO_DEADLINE_INDEFINITE);
+    handler.set_expected_handler_id(id);
   }
-  EXPECT_EQ(1, handler.error_count());
-  EXPECT_EQ(MOJO_RESULT_ABORTED, handler.last_error_result());
+  EXPECT_EQ(2, handler.error_count());
 }
 
 TEST(RunLoopTest, Current) {
@@ -271,15 +307,10 @@ TEST(RunLoopTest, Current) {
 
 class NestingRunLoopHandler : public TestRunLoopHandler {
  public:
-  static const size_t kDepthLimit;
-  static const char kSignalMagic;
+  static constexpr size_t kDepthLimit = 10;
+  static constexpr char kSignalMagic = 'X';
 
-  NestingRunLoopHandler()
-      : run_loop_(nullptr),
-        pipe_(nullptr),
-        depth_(0),
-        reached_depth_limit_(false) {}
-
+  NestingRunLoopHandler() {}
   ~NestingRunLoopHandler() override {}
 
   void set_run_loop(RunLoop* run_loop) { run_loop_ = run_loop; }
@@ -287,23 +318,18 @@ class NestingRunLoopHandler : public TestRunLoopHandler {
   bool reached_depth_limit() const { return reached_depth_limit_; }
 
   // RunLoopHandler:
-  void OnHandleReady(const Handle& handle) override {
-    TestRunLoopHandler::OnHandleReady(handle);
-    EXPECT_EQ(handle.value(), pipe_->handle0.get().value());
+  void OnHandleReady(Id id) override {
+    TestRunLoopHandler::OnHandleReady(id);
 
     ReadSignal();
     size_t current_depth = ++depth_;
     if (current_depth < kDepthLimit) {
-      WriteSignal();
+      AddHandlerAndWriteSignal();
       run_loop_->Run();
-      if (current_depth == kDepthLimit - 1) {
-        // The topmost loop Quit()-ed, so its parent takes back the
-        // control without exeeding deadline.
-        EXPECT_EQ(error_count(), 0);
-      } else {
-        EXPECT_EQ(error_count(), 1);
-      }
-
+      // The innermost loop stops running due to Quit() being called; the outer
+      // loops stop running due to having no more handlers. No errors/timeouts
+      // should ever occur.
+      EXPECT_EQ(error_count(), 0);
     } else {
       EXPECT_EQ(current_depth, kDepthLimit);
       reached_depth_limit_ = true;
@@ -312,10 +338,12 @@ class NestingRunLoopHandler : public TestRunLoopHandler {
     --depth_;
   }
 
-  void WriteSignal() {
-    char write_byte = kSignalMagic;
+  void AddHandlerAndWriteSignal() {
+    run_loop_->AddHandler(this, pipe_->handle0.get(),
+                          MOJO_HANDLE_SIGNAL_READABLE,
+                          static_cast<MojoDeadline>(10000));
     MojoResult write_result =
-        WriteMessageRaw(pipe_->handle1.get(), &write_byte, 1, nullptr, 0,
+        WriteMessageRaw(pipe_->handle1.get(), &kSignalMagic, 1, nullptr, 0,
                         MOJO_WRITE_MESSAGE_FLAG_NONE);
     EXPECT_EQ(write_result, MOJO_RESULT_OK);
   }
@@ -332,16 +360,19 @@ class NestingRunLoopHandler : public TestRunLoopHandler {
   }
 
  private:
-  RunLoop* run_loop_;
-  MessagePipe* pipe_;
-  size_t depth_;
-  bool reached_depth_limit_;
+  RunLoop* run_loop_ = nullptr;
+  MessagePipe* pipe_ = nullptr;
+  size_t depth_ = 0u;
+  bool reached_depth_limit_ = false;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(NestingRunLoopHandler);
 };
 
-const size_t NestingRunLoopHandler::kDepthLimit = 10;
-const char NestingRunLoopHandler::kSignalMagic = 'X';
+// static
+const size_t NestingRunLoopHandler::kDepthLimit;
+
+// static
+const char NestingRunLoopHandler::kSignalMagic;
 
 TEST(RunLoopTest, NestedRun) {
   NestingRunLoopHandler handler;
@@ -349,17 +380,12 @@ TEST(RunLoopTest, NestedRun) {
   RunLoop run_loop;
   handler.set_run_loop(&run_loop);
   handler.set_pipe(&test_pipe);
-  run_loop.AddHandler(&handler, test_pipe.handle0.get(),
-                      MOJO_HANDLE_SIGNAL_READABLE,
-                      static_cast<MojoDeadline>(10000));
-  handler.WriteSignal();
+  handler.AddHandlerAndWriteSignal();
   run_loop.Run();
 
   EXPECT_TRUE(handler.reached_depth_limit());
-  // Got MOJO_RESULT_DEADLINE_EXCEEDED once then removed from the
-  // RunLoop's handler list.
-  EXPECT_EQ(handler.error_count(), 1);
-  EXPECT_EQ(handler.last_error_result(), MOJO_RESULT_DEADLINE_EXCEEDED);
+  // See the comment in NestingRunLoopHandler::OnHandleReady() above.
+  EXPECT_EQ(handler.error_count(), 0);
 }
 
 struct Task {

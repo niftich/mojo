@@ -8,9 +8,9 @@
 // and has references to the type descriptorss that further describe the
 // pointers. The table is used for doing all computations for the struct --
 // determining serialized size, encoding and decoding recursively, etc. A type
-// descriptor is generated for each struct, union, array and map. Note that
-// mojom maps are just mojom structs with two mojom arrays, so there is no
-// separate descriptor for it.
+// descriptor is generated for each struct, union, array and map. Mojom maps are
+// just mojom structs with two mojom arrays. We denote it as a separate type,
+// but it is described the same way as a mojom struct.
 //
 // The user is not expected to construct type descriptors -- a bindings
 // generator will do this when it generates bindings for a mojom file.
@@ -28,6 +28,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "mojo/public/c/bindings/buffer.h"
+#include "mojo/public/c/bindings/lib/util.h"
+#include "mojo/public/c/bindings/validation.h"
+#include "mojo/public/c/system/handle.h"
 #include "mojo/public/c/system/macros.h"
 
 MOJO_BEGIN_EXTERN_C
@@ -37,6 +41,8 @@ MOJO_BEGIN_EXTERN_C
 // is describing a reference type), or to indicate that it's a handle type.
 // Values that correspond to an |elem_descriptor|'s pointer type:
 // - If MOJOM_TYPE_DESCRIPTOR_TYPE_STRUCT_PTR, then |elem_descriptor| points to
+//   a |MojomTypeDescriptorStruct|.
+// - If MOJOM_TYPE_DESCRIPTOR_TYPE_MAP_PTR, then |elem_descriptor| points to
 //   a |MojomTypeDescriptorStruct|.
 // - If MOJOM_TYPE_DESCRIPTOR_TYPE_UNION or
 //   MOJOM_TYPE_DESCRIPTOR_TYPE_UNION_PTR, then |elem_descriptor| points to a
@@ -48,27 +54,36 @@ enum MojomTypeDescriptorType {
   // Note: A map is a mojom struct with 2 mojom arrays, so we don't have a
   // separate descriptor type for it.
   MOJOM_TYPE_DESCRIPTOR_TYPE_STRUCT_PTR = 0,
-  MOJOM_TYPE_DESCRIPTOR_TYPE_ARRAY_PTR = 1,
+  MOJOM_TYPE_DESCRIPTOR_TYPE_MAP_PTR = 1,
+  MOJOM_TYPE_DESCRIPTOR_TYPE_ARRAY_PTR = 2,
   // A MOJOM_TYPE_DESCRIPTOR_TYPE_UNION_PTR only occurs inside a
   // |MojomTypeDescriptorUnion|, since union fields inside unions are encoded as
   // pointers to an out-of-line union.
-  MOJOM_TYPE_DESCRIPTOR_TYPE_UNION_PTR = 2,
+  MOJOM_TYPE_DESCRIPTOR_TYPE_UNION_PTR = 3,
   // A union that is not inside a union is inlined, and described by
   // MOJOM_TYPE_DESCRIPTOR_TYPE_UNION.
-  MOJOM_TYPE_DESCRIPTOR_TYPE_UNION = 3,
-  MOJOM_TYPE_DESCRIPTOR_TYPE_HANDLE = 4,
-  MOJOM_TYPE_DESCRIPTOR_TYPE_INTERFACE = 5,
+  MOJOM_TYPE_DESCRIPTOR_TYPE_UNION = 4,
+  MOJOM_TYPE_DESCRIPTOR_TYPE_HANDLE = 5,
+  MOJOM_TYPE_DESCRIPTOR_TYPE_INTERFACE = 6,
   // This is only used in an array descriptor, and serves as a way to terminate
   // a chain of array descriptors; the last entry in the chain always contains a
   // plain-old-data type.
-  MOJOM_TYPE_DESCRIPTOR_TYPE_POD = 6,
+  MOJOM_TYPE_DESCRIPTOR_TYPE_POD = 7,
+};
+
+struct MojomTypeDescriptorStructVersion {
+  uint32_t version;
+  uint32_t num_bytes;
 };
 
 // Mojom structs are described using this struct.
 struct MojomTypeDescriptorStruct {
-  size_t num_entries;
+  size_t num_versions;
+  // Increasing ordered by version.
+  struct MojomTypeDescriptorStructVersion* versions;
   // |entries| is an array of |num_entries|, each describing a field of
   // reference or handle type.
+  size_t num_entries;
   const struct MojomTypeDescriptorStructEntry* entries;
 };
 
@@ -124,6 +139,9 @@ struct MojomTypeDescriptorArray {
   // How many elements is this array expected to hold?
   // 0 means unspecified.
   uint32_t num_elements;
+  // Size of each element, in bits (since bools are 1-bit in size). This is
+  // needed to validate the size of an array.
+  uint32_t elem_num_bits;
   bool nullable;
 };
 
@@ -140,10 +158,46 @@ bool MojomType_IsPointer(enum MojomTypeDescriptorType type);
 // This helper function, depending on |type|, calls the appropriate
 // *_ComputeSerializedSize(|type_desc|, |data|).
 size_t MojomType_DispatchComputeSerializedSize(
-    bool nullable,
     enum MojomTypeDescriptorType type,
     const void* type_desc,
+    bool nullable,
     const void* data);
+
+// This helper function, depending on |type|, calls the appropriate
+// *_DispatchEncodePointersAndHandles(...). If |type| describes a pointer, it
+// first encodes the pointer before calling the associated
+// *_DispatchEncodePointersAndHandles(...). If |type| describes a handle, it
+// encodes handle into |inout_handles|.
+void MojomType_DispatchEncodePointersAndHandles(
+    enum MojomTypeDescriptorType in_elem_type,
+    const void* in_type_desc,
+    bool in_nullable,
+    void* inout_buf,
+    uint32_t in_buf_size,
+    struct MojomHandleBuffer* inout_handles_buffer);
+
+// This helper function, depending on |type|, calls the appropriate
+// *_DispatchDeocdePointersAndHandles(...). If |type| describes a pointer, it
+// first decodes the offset into a pointer before calling the associated
+// *_DispatchDecodePointersAndHandles(...). If |type| describes a handle, it
+// decodes the handle by looking up it up in |inout_handles|.
+void MojomType_DispatchDecodePointersAndHandles(
+    enum MojomTypeDescriptorType in_elem_type,
+    const void* in_type_desc,
+    bool in_nullable,
+    void* inout_buf,
+    uint32_t in_buf_size,
+    MojoHandle* inout_handles,
+    uint32_t in_num_handles);
+
+MojomValidationResult MojomType_DispatchValidate(
+    enum MojomTypeDescriptorType in_elem_type,
+    const void* in_type_desc,
+    bool in_nullable,
+    const void* in_buf,
+    uint32_t in_buf_size,
+    uint32_t in_num_handles,
+    struct MojomValidationContext* inout_context);
 
 MOJO_END_EXTERN_C
 

@@ -17,6 +17,7 @@
 #include "mojo/public/cpp/bindings/lib/validation_errors.h"
 #include "mojo/public/cpp/bindings/message.h"
 #include "mojo/public/cpp/bindings/tests/validation_test_input_parser.h"
+#include "mojo/public/cpp/bindings/tests/validation_util.h"
 #include "mojo/public/cpp/system/macros.h"
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "mojo/public/cpp/test_support/test_support.h"
@@ -69,108 +70,23 @@ bool TestInputParser(const std::string& input,
   return !result && !error_message.empty();
 }
 
-std::vector<std::string> GetMatchingTests(const std::vector<std::string>& names,
-                                          const std::string& prefix) {
-  const std::string suffix = ".data";
-  std::vector<std::string> tests;
-  for (size_t i = 0; i < names.size(); ++i) {
-    if (names[i].size() >= suffix.size() &&
-        names[i].substr(0, prefix.size()) == prefix &&
-        names[i].substr(names[i].size() - suffix.size()) == suffix)
-      tests.push_back(names[i].substr(0, names[i].size() - suffix.size()));
-  }
-  return tests;
-}
-
-bool ReadFile(const std::string& path, std::string* result) {
-  FILE* fp = OpenSourceRootRelativeFile(path.c_str());
-  if (!fp) {
-    ADD_FAILURE() << "File not found: " << path;
-    return false;
-  }
-  fseek(fp, 0, SEEK_END);
-  size_t size = static_cast<size_t>(ftell(fp));
-  if (size == 0) {
-    result->clear();
-    fclose(fp);
-    return true;
-  }
-  fseek(fp, 0, SEEK_SET);
-  result->resize(size);
-  size_t size_read = fread(&result->at(0), 1, size, fp);
-  fclose(fp);
-  return size == size_read;
-}
-
-bool ReadAndParseDataFile(const std::string& path,
-                          std::vector<uint8_t>* data,
-                          size_t* num_handles) {
-  std::string input;
-  if (!ReadFile(path, &input))
-    return false;
-
-  std::string error_message;
-  if (!ParseValidationTestInput(input, data, num_handles, &error_message)) {
-    ADD_FAILURE() << error_message;
-    return false;
-  }
-
-  return true;
-}
-
-bool ReadResultFile(const std::string& path, std::string* result) {
-  if (!ReadFile(path, result))
-    return false;
-
-  // Result files are new-line delimited text files. Remove any CRs.
-  result->erase(std::remove(result->begin(), result->end(), '\r'),
-                result->end());
-
-  // Remove trailing LFs.
-  size_t pos = result->find_last_not_of('\n');
-  if (pos == std::string::npos)
-    result->clear();
-  else
-    result->resize(pos + 1);
-
-  return true;
-}
-
-std::string GetPath(const std::string& root, const std::string& suffix) {
-  return "mojo/public/interfaces/bindings/tests/data/validation/" + root +
-         suffix;
-}
-
-// |message| should be a newly created object.
-bool ReadTestCase(const std::string& test,
-                  Message* message,
-                  std::string* expected) {
-  std::vector<uint8_t> data;
-  size_t num_handles;
-  if (!ReadAndParseDataFile(GetPath(test, ".data"), &data, &num_handles) ||
-      !ReadResultFile(GetPath(test, ".expected"), expected)) {
-    return false;
-  }
-
-  message->AllocUninitializedData(static_cast<uint32_t>(data.size()));
-  if (!data.empty())
-    memcpy(message->mutable_data(), &data[0], data.size());
-  message->mutable_handles()->resize(num_handles);
-
-  return true;
-}
-
 void RunValidationTests(const std::string& prefix,
                         const MessageValidatorList& validators,
                         MessageReceiver* test_message_receiver) {
-  std::vector<std::string> names =
-      EnumerateSourceRootRelativeDirectory(GetPath("", ""));
-  std::vector<std::string> tests = GetMatchingTests(names, prefix);
+  std::vector<std::string> tests = validation_util::GetMatchingTests(prefix);
 
   for (size_t i = 0; i < tests.size(); ++i) {
-    Message message;
     std::string expected;
-    ASSERT_TRUE(ReadTestCase(tests[i], &message, &expected));
+    std::vector<uint8_t> data;
+    size_t num_handles;
+    ASSERT_TRUE(validation_util::ReadTestCase(tests[i], &data, &num_handles,
+                                              &expected));
+
+    Message message;
+    message.AllocUninitializedData(data.size());
+    if (!data.empty())
+      memcpy(message.mutable_data(), &data[0], data.size());
+    message.mutable_handles()->resize(num_handles);
 
     std::string actual;
     auto result = RunValidatorsOnMessage(validators, &message, nullptr);

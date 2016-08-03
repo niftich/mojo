@@ -394,3 +394,8 @@ struct ArrayOfArrays {
   array<array<int32>?> a;
   array<array<int32>>? b;
 };
+
+struct StructWithNullableHandles {
+  handle<message_pipe>? h;
+  array<handle<message_pipe>?> array_h;
+};

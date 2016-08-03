@@ -19,6 +19,7 @@ mojo_sdk_source_set("bindings") {
     # Implementation details.
     "lib/array.c",
     "lib/buffer.c",
+    "lib/map.c",
     "lib/message.c",
     "lib/struct.c",
     "lib/type_descriptor.c",

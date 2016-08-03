@@ -20,19 +20,17 @@ namespace {
 // . when CancelWait() is invoked.
 class RunLoopHandlerImpl : public RunLoopHandler {
  public:
-  RunLoopHandlerImpl(const Handle& handle,
-                     MojoAsyncWaitCallback callback,
-                     void* closure)
-      : handle_(handle), callback_(callback), closure_(closure) {}
+  RunLoopHandlerImpl(MojoAsyncWaitCallback callback, void* closure)
+      : id_(0u), callback_(callback), closure_(closure) {}
 
-  ~RunLoopHandlerImpl() override { RunLoop::current()->RemoveHandler(handle_); }
+  ~RunLoopHandlerImpl() override { RunLoop::current()->RemoveHandler(id_); }
+
+  void set_id(Id id) { id_ = id; }
 
   // RunLoopHandler:
-  void OnHandleReady(const Handle& handle) override {
-    NotifyCallback(MOJO_RESULT_OK);
-  }
+  void OnHandleReady(Id /*id*/) override { NotifyCallback(MOJO_RESULT_OK); }
 
-  void OnHandleError(const Handle& handle, MojoResult result) override {
+  void OnHandleError(Id /*id*/, MojoResult result) override {
     NotifyCallback(result);
   }
 
@@ -47,9 +45,9 @@ class RunLoopHandlerImpl : public RunLoopHandler {
     callback(closure, result);
   }
 
-  const Handle handle_;
-  MojoAsyncWaitCallback callback_;
-  void* closure_;
+  Id id_;
+  const MojoAsyncWaitCallback callback_;
+  void* const closure_;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(RunLoopHandlerImpl);
 };
@@ -65,8 +63,9 @@ MojoAsyncWaitID AsyncWait(MojoHandle handle,
   // |run_loop_handler| is destroyed either when the handle is ready or if
   // CancelWait is invoked.
   RunLoopHandlerImpl* run_loop_handler =
-      new RunLoopHandlerImpl(Handle(handle), callback, closure);
-  run_loop->AddHandler(run_loop_handler, Handle(handle), signals, deadline);
+      new RunLoopHandlerImpl(callback, closure);
+  run_loop_handler->set_id(run_loop->AddHandler(
+      run_loop_handler, Handle(handle), signals, deadline));
   return reinterpret_cast<MojoAsyncWaitID>(run_loop_handler);
 }
 

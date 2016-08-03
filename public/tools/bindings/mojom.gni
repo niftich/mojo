@@ -2,6 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+# TODO(vardhan): Targets for each language bindings depend on a central
+# generator target which generates bindings for /every/ language. Create
+# separate generator targets for each language.
+
 import("../../mojo_sdk.gni")
 
 # Generate C++/JavaScript/Java/Python/Dart/Go source files from mojom files. The
@@ -51,9 +55,19 @@ template("mojom") {
   cpp_sources_suffix = "cpp_sources"
   cpp_sources_target_name = "${target_name}_${cpp_sources_suffix}"
   cpp_sync_sources_target_name = "${target_name}_${cpp_sources_suffix}_sync"
+
   if (defined(invoker.sources)) {
     generator_root = rebase_path("mojo/public/tools/bindings", ".", mojo_root)
     mojom_tool = "$generator_root/mojom_tool.py"
+
+    # The |generator_host_platform| string is used to determine the subdirectory
+    # where our mojom and generator binaries live.
+    generator_host_platform = host_os
+    if (host_cpu == "x64") {
+      generator_host_platform += "64"
+    } else if (host_cpu == "x86") {
+      generator_host_platform += "32"
+    }
     generator_sources = [
       mojom_tool,
       "$generator_root/run_code_generators.py",
@@ -125,12 +139,9 @@ template("mojom") {
       "$generator_root/generators/mojom_js_generator.py",
       "$generator_root/generators/mojom_java_generator.py",
       "$generator_root/generators/mojom_python_generator.py",
-      "$generator_root/mojom_tool/bin/linux64/mojom.sha1",
-      "$generator_root/mojom_tool/bin/mac64/mojom.sha1",
-      "$generator_root/mojom_tool/bin/linux64/generators/c.sha1",
-      "$generator_root/mojom_tool/bin/mac64/generators/c.sha1",
-      "$generator_root/mojom_tool/bin/linux64/generators/go.sha1",
-      "$generator_root/mojom_tool/bin/mac64/generators/go.sha1",
+      "$generator_root/mojom_tool/bin/${generator_host_platform}/mojom",
+      "$generator_root/mojom_tool/bin/${generator_host_platform}/generators/c",
+      "$generator_root/mojom_tool/bin/${generator_host_platform}/generators/go",
       "$generator_root/pylib/mojom/__init__.py",
       "$generator_root/pylib/mojom/error.py",
       "$generator_root/pylib/mojom/generate/__init__.py",
@@ -266,7 +277,8 @@ template("mojom") {
     public_configs =
         rebase_path([ "mojo/public/build/config:mojo_sdk" ], ".", mojo_root)
 
-    public_deps = rebase_path([ "mojo/public/cpp/bindings" ], ".", mojo_root)
+    public_deps =
+        rebase_path([ "mojo/public/cpp/bindings:core" ], ".", mojo_root)
     public_deps += cpp_public_deps
     if (defined(invoker.sources)) {
       public_deps += [ ":${cpp_sources_target_name}" ]
