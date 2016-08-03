@@ -73,7 +73,6 @@ class ShapesApp : public mojo::ApplicationImplBase {
         sk_color_type = kRGB_565_SkColorType;
         break;
     }
-    sk_color_type = kRGBA_8888_SkColorType;
     SkImageInfo image_info =
         SkImageInfo::Make(info_->size->width, info_->size->height,
                           sk_color_type, kPremul_SkAlphaType);
