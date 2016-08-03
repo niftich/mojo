@@ -6,14 +6,19 @@ group("test") {
   testonly = true
 
   deps = [
-    ":c_bindings_unit",
-    ":c_system_unit",
-    ":cpp_application_unit",
-    ":cpp_bindings_perf",
-    ":cpp_bindings_unit",
-    ":cpp_environment_unit",
-    ":cpp_system_unit",
-    ":cpp_utility_unit",
+    # Unit tests:
+    ":mojo_public_c_bindings_unittests",
+    ":mojo_public_c_system_unittests",
+    ":mojo_public_cpp_application_unittests",
+    ":mojo_public_cpp_bindings_unittests",
+    ":mojo_public_cpp_environment_unittests",
+    ":mojo_public_cpp_system_unittests",
+    ":mojo_public_cpp_utility_unittests",
+
+    # Perf tests:
+    ":mojo_public_c_system_perftests",
+    ":mojo_public_cpp_bindings_perftests",
+    ":mojo_public_cpp_environment_perftests",
   ]
 }
 
@@ -34,7 +39,6 @@ template("mojo_public_test") {
 
   executable(target_name) {
     testonly = true
-    output_name = "mojo_public_" + target_name + "tests"
 
     sources = [
       "run_all_unittests.cc",
@@ -47,53 +51,75 @@ template("mojo_public_test") {
   }
 }
 
-mojo_public_test("c_bindings_unit") {
+# C unit tests:
+
+mojo_public_test("mojo_public_c_bindings_unittests") {
   deps = [
     ":test_support",
     "//mojo/public/c/bindings/tests",
   ]
 }
 
-mojo_public_test("c_system_unit") {
+mojo_public_test("mojo_public_c_system_unittests") {
   deps = [
     "//mojo/public/c/system/tests",
   ]
 }
 
-mojo_public_test("cpp_application_unit") {
+# C++ unit tests:
+
+mojo_public_test("mojo_public_cpp_application_unittests") {
   deps = [
     "//mojo/public/cpp/application/tests",
   ]
 }
 
-mojo_public_test("cpp_environment_unit") {
+mojo_public_test("mojo_public_cpp_bindings_unittests") {
+  deps = [
+    ":test_support",
+    "//mojo/public/cpp/bindings/tests",
+  ]
+}
+
+mojo_public_test("mojo_public_cpp_environment_unittests") {
   deps = [
     "//mojo/public/cpp/environment/tests",
   ]
 }
 
-mojo_public_test("cpp_system_unit") {
+mojo_public_test("mojo_public_cpp_system_unittests") {
   deps = [
     "//mojo/public/cpp/system/tests",
   ]
 }
 
-mojo_public_test("cpp_utility_unit") {
+mojo_public_test("mojo_public_cpp_utility_unittests") {
   deps = [
     "//mojo/public/cpp/utility/tests",
   ]
 }
 
-mojo_public_test("cpp_bindings_perf") {
+# C perf tests:
+
+mojo_public_test("mojo_public_c_system_perftests") {
+  deps = [
+    ":test_support",
+    "//mojo/public/c/system/tests:perftests",
+  ]
+}
+
+# C++ perf tests:
+
+mojo_public_test("mojo_public_cpp_bindings_perftests") {
   deps = [
     ":test_support",
     "//mojo/public/cpp/bindings/tests:perftests",
   ]
 }
 
-mojo_public_test("cpp_bindings_unit") {
+mojo_public_test("mojo_public_cpp_environment_perftests") {
   deps = [
     ":test_support",
-    "//mojo/public/cpp/bindings/tests",
+    "//mojo/public/cpp/environment/tests:perftests",
   ]
 }
