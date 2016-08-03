@@ -49,6 +49,11 @@ download_tool \
   "mojo/mojom_parser/${HOST_PLATFORM}/generators"
 
 download_tool \
+  "mojom go generator" \
+  "public/tools/bindings/mojom_tool/bin/${HOST_PLATFORM}/generators/go" \
+  "mojo/mojom_parser/${HOST_PLATFORM}/generators"
+
+download_tool \
   "mojom deps generator" \
   "public/tools/bindings/mojom_tool/bin/${HOST_PLATFORM}/generators/deps" \
   "mojo/mojom_parser/${HOST_PLATFORM}/generators"
