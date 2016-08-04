@@ -13,7 +13,10 @@ void LogPerfResult(const char* test_name,
                    const char* sub_test_name,
                    double value,
                    const char* units) {
-  printf("%s %s %.3f %s\n", test_name, sub_test_name, value, units);
+  if (sub_test_name)
+    printf("%s %s %.3f %s\n", test_name, sub_test_name, value, units);
+  else
+    printf("%s %.3f %s\n", test_name, value, units);
 }
 
 FILE* OpenSourceRootRelativeFile(const std::string& relative_path) {
