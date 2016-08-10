@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <launchpad/launchpad.h>
 #include <magenta/processargs.h>
@@ -127,8 +128,11 @@ mtl::UniqueHandle LaunchWithProcess(
   const char* path_arg = path.c_str();
   // TODO(abarth): Remove const_cast once MG-185 is fixed.
   char** argv = const_cast<char**>(&path_arg);
+  // TODO: We probably shouldn't pass environ, but currently this is very useful
+  // as a way to tell the loader in the child process to print out load
+  // addresses so we can understand crashes.
   return mtl::UniqueHandle(
-      launchpad_launch_basic(path_arg, 1, argv, index, child_handles, ids));
+      launchpad_launch(path_arg, 1, argv, environ, index, child_handles, ids));
 }
 
 }  // namespace
