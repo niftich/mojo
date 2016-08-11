@@ -14,7 +14,7 @@
 #include <stddef.h>
 
 #define GL_GLEXT_PROTOTYPES
-#include "mojo/public/c/gpu/GLES2/gl2extmojo.h"
+#include <GLES2/gl2extmojo.h>
 
 // Specifies the frozen API for the EXT_multisampled_render_to_texture
 // extension.

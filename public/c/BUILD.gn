@@ -1,0 +1,356 @@
+# Copyright 2016 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("../mojo_sdk.gni")
+
+config("c_config") {
+  include_dirs = [ "include" ]
+}
+
+# Catch-all for all public C headers/libraries, except for the bindings.
+group("c") {
+  public_deps = [
+    ":common",
+    ":system",
+  ]
+}
+
+# bindings ---------------------------------------------------------------------
+
+# Headers in include/mojo/bindings (to be included as <mojo/bindings/HEADER.h>)
+# and library in lib/bindings.
+#
+# Depends on :common and :system (minimally -- just <mojo/system/handle.h>).
+
+mojo_sdk_source_set("bindings") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    # Public headers.
+    "include/mojo/bindings/array.h",
+    "include/mojo/bindings/buffer.h",
+    "include/mojo/bindings/interface.h",
+    "include/mojo/bindings/map.h",
+    "include/mojo/bindings/message.h",
+    "include/mojo/bindings/string.h",
+    "include/mojo/bindings/struct.h",
+    "include/mojo/bindings/union.h",
+    "include/mojo/bindings/validation.h",
+
+    # Internal headers.
+    "include/mojo/bindings/internal/type_descriptor.h",
+    "include/mojo/bindings/internal/util.h",
+
+    # Implementation library.
+    # TODO(vtl): Maybe separate this out into a separate source set (or even
+    # static library?).
+    "lib/bindings/array.c",
+    "lib/bindings/buffer.c",
+    "lib/bindings/map.c",
+    "lib/bindings/message.c",
+    "lib/bindings/struct.c",
+    "lib/bindings/type_descriptor.c",
+    "lib/bindings/union.c",
+  ]
+
+  deps = [
+    ":system",
+  ]
+}
+
+mojo_sdk_source_set("bindings_unittests") {
+  testonly = true
+
+  sources = [
+    "tests/bindings/array_unittest.cc",
+    "tests/bindings/buffer_unittest.cc",
+    "tests/bindings/message_unittest.cc",
+    "tests/bindings/struct_unittest.cc",
+    "tests/bindings/testing_util.h",
+    "tests/bindings/union_unittest.cc",
+    "tests/bindings/validation_unittest.cc",
+  ]
+
+  deps = [
+    ":bindings",
+    "//third_party/gtest",
+  ]
+
+  mojo_sdk_deps = [
+    "mojo/public/cpp/bindings/tests:mojo_public_bindings_test_utils",
+    "mojo/public/cpp/bindings/tests:validation_util",
+    "mojo/public/cpp/test_support",
+    "mojo/public/cpp/system",
+
+    # The "_c" suffix'd target compiles the generated C bindings to this mojom
+    # target.
+    "mojo/public/interfaces/bindings/tests:test_interfaces_c",
+  ]
+}
+
+# common -----------------------------------------------------------------------
+
+# Headers in include/mojo (to be included as <mojo/HEADER.h>).
+#
+# Depends on nothing.
+
+mojo_sdk_source_set("common") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/mojo/macros.h",
+    "include/mojo/result.h",
+  ]
+}
+
+mojo_sdk_source_set("common_unittests") {
+  testonly = true
+
+  sources = [
+    "tests/macros_unittest.cc",
+    "tests/result_unittest.cc",
+  ]
+
+  deps = [
+    ":common",
+    "//third_party/gtest",
+  ]
+}
+
+# environment ------------------------------------------------------------------
+
+# Headers in include/mojo/environment (to be included as
+# <mojo//environment/HEADER.h>).
+#
+# Depends on :system (and thus :common).
+
+mojo_sdk_source_set("environment") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/mojo/environment/async_waiter.h",
+    "include/mojo/environment/logger.h",
+  ]
+
+  public_deps = [
+    ":system",
+  ]
+}
+
+mojo_sdk_source_set("environment_perftest_helpers") {
+  testonly = true
+
+  sources = [
+    "tests/environment/async_waiter_perftest_helpers.cc",
+    "tests/environment/async_waiter_perftest_helpers.h",
+  ]
+
+  public_deps = [
+    ":environment",
+  ]
+
+  mojo_sdk_deps = [ "mojo/public/cpp/system" ]
+}
+
+# gpu / gpu_onscreen -----------------------------------------------------------
+
+# TODO(vtl): Rationalize this to be more like the others. Probably, we should
+# just have :GLES2, :MGL, etc. targets (and no :gpu/:gpu_onscreen).
+
+group("gpu") {
+  public_deps = [
+    ":GLES2",
+    ":MGL",
+    ":MGL_signal_sync_point",
+  ]
+
+  # TODO(vtl)
+  #deps = [
+  #  "../platform/native:gles2_thunks",
+  #  "../platform/native:mgl_thunks",
+  #]
+}
+
+group("gpu_onscreen") {
+  public_deps = [
+    ":MGL_onscreen",
+    ":gpu",
+  ]
+
+  # TODO(vtl)
+  #deps = [
+  #  "../platform/native:mgl_onscreen_thunks",
+  #]
+}
+
+mojo_sdk_source_set("MGL") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/MGL/mgl.h",
+    "include/MGL/mgl_types.h",
+  ]
+
+  public_deps = [
+    ":system",
+  ]
+}
+
+mojo_sdk_source_set("MGL_onscreen") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/MGL/mgl_onscreen.h",
+  ]
+
+  public_deps = [
+    ":MGL",
+  ]
+}
+
+mojo_sdk_source_set("MGL_echo") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/MGL/mgl_echo.h",
+  ]
+
+  public_deps = [
+    ":MGL",
+  ]
+}
+
+mojo_sdk_source_set("MGL_signal_sync_point") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/MGL/mgl_signal_sync_point.h",
+  ]
+
+  public_deps = [
+    ":MGL",
+  ]
+}
+
+mojo_sdk_source_set("GLES2") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/GLES2/gl2.h",
+    "include/GLES2/gl2ext.h",
+    "include/GLES2/gl2extmojo.h",
+    "include/GLES2/gl2mojo_autogen.h",
+    "include/GLES2/gl2mojo_internal.h",
+    "include/GLES2/gl2platform.h",
+  ]
+
+  public_deps = [
+    ":KHR",
+  ]
+}
+
+mojo_sdk_source_set("KHR") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/KHR/khrplatform.h",
+  ]
+}
+
+# system -----------------------------------------------------------------------
+
+# Headers in include/mojo/system (to be included as <mojo/system/HEADER.h>).
+#
+# Depends on :common.
+
+mojo_sdk_source_set("system") {
+  public_configs = [ ":c_config" ]
+
+  sources = [
+    "include/mojo/system/buffer.h",
+    "include/mojo/system/data_pipe.h",
+    "include/mojo/system/handle.h",
+    "include/mojo/system/main.h",
+    "include/mojo/system/message_pipe.h",
+    "include/mojo/system/time.h",
+    "include/mojo/system/wait.h",
+    "include/mojo/system/wait_set.h",
+  ]
+
+  public_deps = [
+    ":common",
+  ]
+}
+
+mojo_sdk_source_set("system_unittests") {
+  testonly = true
+
+  sources = [
+    "tests/system/buffer_unittest.cc",
+    "tests/system/data_pipe_unittest.cc",
+    "tests/system/handle_unittest.cc",
+    "tests/system/message_pipe_unittest.cc",
+    "tests/system/time_unittest.cc",
+    "tests/system/wait_set_unittest.cc",
+    "tests/system/wait_unittest.cc",
+  ]
+
+  deps = [
+    ":system",
+    "//third_party/gtest",
+  ]
+}
+
+mojo_sdk_source_set("system_perftests") {
+  testonly = true
+
+  sources = [
+    "tests/system/message_pipe_perftest.cc",
+    "tests/system/perftest_utils.cc",
+    "tests/system/perftest_utils.h",
+    "tests/system/reference_perftest.cc",
+    "tests/system/wait_set_perftest.cc",
+  ]
+
+  deps = [
+    ":system",
+    "//third_party/gtest",
+  ]
+
+  mojo_sdk_deps = [ "mojo/public/cpp/test_support" ]
+}
+
+# Compilation tests ------------------------------------------------------------
+
+# This test ensures that various headers compile and link properly.
+mojo_sdk_source_set("compile_unittests") {
+  testonly = true
+
+  sources = [
+    "tests/compile/compile_unittest.cc",
+  ]
+
+  deps = [
+    ":pure_compile_tests",
+    "//third_party/gtest",
+  ]
+}
+
+# This source set contains "pure" tests that only depend on the public SDK (and
+# the standard library), and in particular not on gtest (whose headers don't
+# compile with "-Wundef").
+mojo_sdk_source_set("pure_compile_tests") {
+  testonly = true
+
+  visibility = [ ":compile_unittests" ]
+
+  cflags = [ "-Wundef" ]
+
+  sources = [
+    "tests/compile/pure_c.c",
+    "tests/compile/pure_cpp.cc",
+  ]
+
+  mojo_sdk_deps = [ "mojo/public/c:environment" ]
+}

@@ -6,15 +6,15 @@
 // replacing the prefix of "Mojo" with a "mojo" namespace, and using more
 // strongly-typed representations of |MojoHandle|s.
 //
-// Please see "mojo/public/c/system/buffer.h" for complete documentation of the
-// API.
+// Please see "mojo/public/c/include/mojo/system/buffer.h" for complete
+// documentation of the API.
 
 #ifndef MOJO_PUBLIC_CPP_SYSTEM_BUFFER_H_
 #define MOJO_PUBLIC_CPP_SYSTEM_BUFFER_H_
 
 #include <assert.h>
+#include <mojo/system/buffer.h>
 
-#include "mojo/public/c/system/buffer.h"
 #include "mojo/public/cpp/system/handle.h"
 #include "mojo/public/cpp/system/macros.h"
 

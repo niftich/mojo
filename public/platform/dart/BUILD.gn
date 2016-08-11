@@ -16,9 +16,9 @@ mojo_sdk_source_set("mojo_internal_impl") {
     "//dart/runtime:libdart",
   ]
 
-  mojo_sdk_deps = [
-    "mojo/public/c/system:system",
-    "mojo/public/cpp/environment:environment",
-    "mojo/public/cpp/system:system",
+  mojo_sdk_public_deps = [
+    "mojo/public/c:system",
+    "mojo/public/cpp/environment",
+    "mojo/public/cpp/system",
   ]
 }

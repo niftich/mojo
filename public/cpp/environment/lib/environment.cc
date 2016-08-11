@@ -5,8 +5,8 @@
 #include "mojo/public/cpp/environment/environment.h"
 
 #include <assert.h>
+#include <mojo/environment/logger.h>
 
-#include "mojo/public/c/environment/logger.h"
 #include "mojo/public/cpp/environment/lib/default_async_waiter.h"
 #include "mojo/public/cpp/environment/lib/default_logger.h"
 #include "mojo/public/cpp/utility/run_loop.h"

@@ -5,8 +5,8 @@
 #ifndef MOJO_PUBLIC_PLATFORM_NACL_MOJO_INTIIAL_HANDLE_H_
 #define MOJO_PUBLIC_PLATFORM_NACL_MOJO_INTIIAL_HANDLE_H_
 
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/result.h"
+#include <mojo/result.h>
+#include <mojo/system/handle.h>
 
 // Provides a MojoHandle that allows untrusted code to communicate with Mojo
 // interfaces outside the sandbox or in other processes.

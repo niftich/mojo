@@ -5,13 +5,13 @@
 #ifndef MOJO_PUBLIC_PYTHON_SRC_COMMON_H_
 #define MOJO_PUBLIC_PYTHON_SRC_COMMON_H_
 
+#include <mojo/environment/async_waiter.h>
+#include <mojo/system/handle.h>
+#include <mojo/system/time.h>
 #include <Python.h>
 
 #include <map>
 
-#include "mojo/public/c/environment/async_waiter.h"
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/time.h"
 #include "mojo/public/cpp/bindings/callback.h"
 #include "mojo/public/cpp/bindings/lib/shared_ptr.h"
 #include "mojo/public/cpp/system/macros.h"

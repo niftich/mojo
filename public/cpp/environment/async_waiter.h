@@ -5,7 +5,8 @@
 #ifndef MOJO_PUBLIC_CPP_ENVIRONMENT_ASYNC_WAITER_H_
 #define MOJO_PUBLIC_CPP_ENVIRONMENT_ASYNC_WAITER_H_
 
-#include "mojo/public/c/environment/async_waiter.h"
+#include <mojo/environment/async_waiter.h>
+
 #include "mojo/public/cpp/bindings/callback.h"
 #include "mojo/public/cpp/environment/environment.h"
 #include "mojo/public/cpp/system/handle.h"

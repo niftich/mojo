@@ -4,12 +4,11 @@
 
 #include "mojo/public/cpp/environment/lib/default_logger.h"
 
+#include <mojo/environment/logger.h>
 #include <stdio.h>
 #include <stdlib.h>  // For |abort()|.
 
 #include <algorithm>
-
-#include "mojo/public/c/environment/logger.h"
 
 namespace mojo {
 

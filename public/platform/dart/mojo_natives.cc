@@ -2,6 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <mojo/result.h>
+#include <mojo/system/buffer.h>
+#include <mojo/system/data_pipe.h>
+#include <mojo/system/handle.h>
+#include <mojo/system/message_pipe.h>
+#include <mojo/system/time.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -9,12 +15,6 @@
 #include <vector>
 
 #include "dart/runtime/include/dart_api.h"
-#include "mojo/public/c/system/buffer.h"
-#include "mojo/public/c/system/data_pipe.h"
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/message_pipe.h"
-#include "mojo/public/c/system/result.h"
-#include "mojo/public/c/system/time.h"
 #include "mojo/public/cpp/environment/logging.h"
 #include "mojo/public/cpp/system/macros.h"
 #include "mojo/public/cpp/system/wait.h"

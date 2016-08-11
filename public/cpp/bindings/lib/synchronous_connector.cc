@@ -4,10 +4,11 @@
 
 #include "mojo/public/cpp/bindings/lib/synchronous_connector.h"
 
+#include <mojo/system/handle.h>
+#include <mojo/system/time.h>
+
 #include <utility>
 
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/time.h"
 #include "mojo/public/cpp/bindings/message.h"
 #include "mojo/public/cpp/environment/logging.h"
 #include "mojo/public/cpp/system/message_pipe.h"

@@ -32,7 +32,7 @@ def _ParseCLIArgs():
                       help="output directory for generated files")
   parser.add_argument("-g", "--generators", dest="generators_string",
                       metavar="GENERATORS",
-                      default="c++,dart,go,javascript,java,python",
+                      default="c++,dart,javascript,java,python",
                       help="comma-separated list of generators")
   parser.add_argument("-s", "--src-root-path", dest="src_root_path",
                       default=".",

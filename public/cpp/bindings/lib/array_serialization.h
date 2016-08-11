@@ -16,7 +16,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "mojo/public/c/system/macros.h"
 #include "mojo/public/cpp/bindings/lib/array_internal.h"
 #include "mojo/public/cpp/bindings/lib/bindings_internal.h"
 #include "mojo/public/cpp/bindings/lib/iterator_util.h"

@@ -20,7 +20,7 @@ group("public") {
 
 group("sdk") {
   deps = [
-    "c/system",
+    "c:system",
     "cpp/application:standalone",
     "cpp/bindings",
     "cpp/environment:standalone",

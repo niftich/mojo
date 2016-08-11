@@ -48,3 +48,21 @@ mojom("versioning_test_client_interfaces") {
     "versioning_test_client.mojom",
   ]
 }
+
+# Declare the validation parser library with a C interface.
+#
+# Generates a static library which C binaries or languages with a C FFI
+# can link against to get a parser for the validation test "golden files".
+#
+
+static_library("validation_parser") {
+  testonly = true
+  complete_static_lib = true
+  sources = [
+    "validation_parser/validation_parser.cc",
+    "validation_parser/validation_parser.h",
+  ]
+  deps = [
+    "../../../cpp/bindings/tests:mojo_public_bindings_test_utils",
+  ]
+}

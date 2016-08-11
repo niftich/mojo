@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-#include "mojo/public/c/environment/tests/async_waiter_perftest_helpers.h"
+#include "mojo/public/c/tests/environment/async_waiter_perftest_helpers.h"
 #include "mojo/public/cpp/environment/environment.h"
 #include "mojo/public/cpp/test_support/test_support.h"
 #include "mojo/public/cpp/utility/run_loop.h"

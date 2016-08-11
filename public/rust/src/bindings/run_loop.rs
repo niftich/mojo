@@ -207,7 +207,9 @@ fn absolute_deadline(deadline: system::MojoDeadline) -> system::MojoTimeTicks {
 /// notion of "now".
 ///
 /// If the deadline is earlier than "now", this routine rounds up to "now".
-fn relative_deadline(deadline: system::MojoTimeTicks, now: system::MojoTimeTicks) -> system::MojoDeadline {
+fn relative_deadline(deadline: system::MojoTimeTicks,
+                     now: system::MojoTimeTicks)
+                     -> system::MojoDeadline {
     if deadline == MOJO_INDEFINITE_ABSOLUTE {
         MOJO_INDEFINITE
     } else if now >= deadline {
@@ -287,11 +289,12 @@ impl<'h> RunLoop<'h> {
             deadline: abs_deadline,
         });
         debug_assert!(!self.handlers.contains_key(&token));
-        self.handlers.insert(token.clone(), HandlerInfo {
-            handle: handle.get_native_handle(),
-            handler: Some(Box::new(handler)),
-            deadline: abs_deadline,
-        });
+        self.handlers.insert(token.clone(),
+                             HandlerInfo {
+                                 handle: handle.get_native_handle(),
+                                 handler: Some(Box::new(handler)),
+                                 deadline: abs_deadline,
+                             });
         token
     }
 
@@ -328,9 +331,11 @@ impl<'h> RunLoop<'h> {
                 // error.
                 let mut dummy = unsafe { system::acquire(info.handle()) };
                 self.handle_set.add(&dummy, signals, token.as_cookie(), wsflags!(Add::None));
-                unsafe { dummy.invalidate(); }
+                unsafe {
+                    dummy.invalidate();
+                }
                 true
-            },
+            }
             None => false,
         }
     }
@@ -346,7 +351,7 @@ impl<'h> RunLoop<'h> {
                 let _result = self.handle_set.remove(token.as_cookie());
                 debug_assert_eq!(_result, MojoResult::Okay);
                 true
-            },
+            }
             None => false,
         }
     }
@@ -377,7 +382,10 @@ impl<'h> RunLoop<'h> {
     /// it in a manner that avoids a borrow cycle, that is, it take()s the handler
     /// out of the HashMap, and returns it when manipulation has completed.
     fn get_handler_with<F>(&mut self, token: &Token, invoker: F)
-        where F: FnOnce(&mut Self, &mut Box<Handler + 'h>, Token, system::MojoTimeTicks)
+        where F: FnOnce(&mut Self,
+                        &mut Box<Handler + 'h>,
+                        Token,
+                        system::MojoTimeTicks)
     {
         // Logic for pulling out the handler as well as its current deadline.
         //
@@ -394,10 +402,13 @@ impl<'h> RunLoop<'h> {
         // from the RunLoop. I could just enable nesting with this one restriction, that
         // the handler calling run() will always be ignored, but this is unintuitive.
         let (mut handler, deadline) = match self.handlers.get_mut(&token) {
-            Some(ref_info) => (match ref_info.take() {
-                Some(handler) => handler,
-                None => return,
-            }, ref_info.deadline()),
+            Some(ref_info) => {
+                (match ref_info.take() {
+                    Some(handler) => handler,
+                    None => return,
+                },
+                 ref_info.deadline())
+            }
             None => return,
         };
         // Call the closure that will invoke the callbacks.
@@ -419,18 +430,14 @@ impl<'h> RunLoop<'h> {
             self.get_handler_with(&token, move |runloop, boxed_handler, token, _dl| {
                 let handler = boxed_handler.as_mut();
                 match wsr.result() {
-                    MojoResult::Okay => {
-                        handler.on_ready(runloop, token)
-                    },
+                    MojoResult::Okay => handler.on_ready(runloop, token),
                     MojoResult::Cancelled => {
                         handler.on_error(runloop, token, WaitError::HandleClosed)
-                    },
-                    MojoResult::Busy => {
-                        handler.on_error(runloop, token, WaitError::HandleBusy)
-                    },
+                    }
+                    MojoResult::Busy => handler.on_error(runloop, token, WaitError::HandleBusy),
                     MojoResult::FailedPrecondition => {
                         handler.on_error(runloop, token, WaitError::Unsatisfiable)
-                    },
+                    }
                     other => panic!("Unexpected result received after waiting: {}", other),
                 }
             });
@@ -454,12 +461,13 @@ impl<'h> RunLoop<'h> {
         };
         while expired_deadline >= top.deadline() {
             let next_deadline = top.deadline();
-            self.get_handler_with(top.token(), move |runloop, boxed_handler, token, expected_dl| {
-                let handler = boxed_handler.as_mut();
-                if next_deadline == expected_dl {
-                    handler.on_timeout(runloop, token);
-                }
-            });
+            self.get_handler_with(top.token(),
+                                  move |runloop, boxed_handler, token, expected_dl| {
+                                      let handler = boxed_handler.as_mut();
+                                      if next_deadline == expected_dl {
+                                          handler.on_timeout(runloop, token);
+                                      }
+                                  });
             // In order to quit as soon as possible, we should check to quit after every
             // potential handler call, as any of them could have signaled to quit.
             if self.should_quit {
@@ -499,11 +507,11 @@ impl<'h> RunLoop<'h> {
                 if capacity < MAXIMUM_WAIT_SET_NUM_RESULTS && capacity < (max_results) as usize {
                     results_buffer.reserve(capacity);
                 }
-            },
+            }
             Err(result) => {
                 assert_eq!(result, MojoResult::DeadlineExceeded);
                 self.notify_of_expired(deadline);
-            },
+            }
         }
     }
 
@@ -515,7 +523,8 @@ impl<'h> RunLoop<'h> {
         }
         self.running = true;
         self.should_quit = false;
-        let mut buffer: Vec<system::WaitSetResult> = Vec::with_capacity(INITIAL_WAIT_SET_NUM_RESULTS);
+        let mut buffer: Vec<system::WaitSetResult> =
+            Vec::with_capacity(INITIAL_WAIT_SET_NUM_RESULTS);
         // Loop while we haven't been signaled to quit, and there's something to wait on.
         while !self.should_quit && !self.handlers.is_empty() {
             self.wait(&mut buffer)

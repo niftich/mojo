@@ -7,10 +7,10 @@
 //! undocumented because they are pulled exactly
 //! from the header files of the Mojo C bindings
 //! API which can be found in the Mojo repository[1]
-//! under //mojo/public/c/system. Very clear
-//! documentation on these structures and functions
-//! can be found there. It is not worth elaborating
-//! on these all again here.
+//! under //mojo/public/c/include/mojo/system. Very
+//! clear documentation on these structures and
+//! functions can be found there. It is not worth
+//! elaborating on these all again here.
 //!
 //! [1] https://github.com/domokit/mojo
 
@@ -104,7 +104,7 @@ pub struct MojoWaitSetAddOptions {
 
 #[link]
 extern "C" {
-    // From //mojo/public/c/system/buffer.h
+    // From //mojo/public/c/include/mojo/system/buffer.h
     pub fn MojoCreateSharedBuffer(options: *const MojoCreateSharedBufferOptions,
                                   num_bytes: u64,
                                   shared_buffer_handle: *mut MojoHandle)
@@ -129,7 +129,7 @@ extern "C" {
 
     pub fn MojoUnmapBuffer(buffer: *const c_void) -> MojoResultCode;
 
-    // From //mojo/public/c/system/data_pipe.h
+    // From //mojo/public/c/include/mojo/system/data_pipe.h
     pub fn MojoCreateDataPipe(options: *const MojoCreateDataPipeOptions,
                               data_pipe_producer_handle: *mut MojoHandle,
                               data_pipe_consumer_handle: *mut MojoHandle)
@@ -167,10 +167,10 @@ extern "C" {
                            num_bytes_written: u32)
                            -> MojoResultCode;
 
-    // From //mojo/public/c/system/handle.h
+    // From //mojo/public/c/include/mojo/system/handle.h
     pub fn MojoClose(handle: MojoHandle) -> MojoResultCode;
 
-    // From //mojo/public/c/system/message_pipe.h
+    // From //mojo/public/c/include/mojo/system/message_pipe.h
     pub fn MojoCreateMessagePipe(options: *const MojoCreateMessagePipeOptions,
                                  message_pipe_handle0: *mut MojoHandle,
                                  message_pipe_handle1: *mut MojoHandle)
@@ -192,10 +192,10 @@ extern "C" {
                            flags: MojoWriteMessageFlags)
                            -> MojoResultCode;
 
-    // From //mojo/public/c/system/time.h
+    // From //mojo/public/c/include/mojo/system/time.h
     pub fn MojoGetTimeTicksNow() -> MojoTimeTicks;
 
-    // From //mojo/public/c/system/wait.h
+    // From //mojo/public/c/include/mojo/system/wait.h
     pub fn MojoWait(handle: MojoHandle,
                     signals: HandleSignals,
                     deadline: MojoDeadline,
@@ -210,7 +210,7 @@ extern "C" {
                         signals_states: *mut SignalsState)
                         -> MojoResultCode;
 
-    // From //mojo/public/c/system/wait_set.h
+    // From //mojo/public/c/include/mojo/system/wait_set.h
     pub fn MojoCreateWaitSet(options: *const MojoCreateWaitSetOptions,
                              handle: *mut MojoHandle)
                              -> MojoResultCode;

@@ -5,13 +5,13 @@
 #ifndef MOJO_PUBLIC_PLATFORM_NACL_MGL_IRT_H_
 #define MOJO_PUBLIC_PLATFORM_NACL_MGL_IRT_H_
 
-#include "mojo/public/c/gpu/MGL/mgl.h"
-#include "mojo/public/c/gpu/MGL/mgl_onscreen.h"
-#include "mojo/public/c/gpu/MGL/mgl_signal_sync_point.h"
+#include <MGL/mgl.h>
+#include <MGL/mgl_onscreen.h>
+#include <MGL/mgl_signal_sync_point.h>
 
 #define NACL_IRT_MGL_v0_1 "nacl-irt-mgl-0.1"
 
-// See mojo/public/c/gpu/MGL/mgl.h for documentation.
+// See mojo/public/c/include/MGL/mgl.h for documentation.
 struct nacl_irt_mgl {
   MGLContext (*MGLCreateContext)(MGLOpenGLAPIVersion version,
                                  MojoHandle command_buffer_handle,
@@ -27,7 +27,7 @@ struct nacl_irt_mgl {
 
 #define NACL_IRT_MGL_ONSCREEN_v0_1 "nacl-irt-mgl-onscreen-0.1"
 
-// See mojo/public/c/gpu/MGL/mgl_onscreen.h for documentation.
+// See mojo/public/c/include/MGL/mgl_onscreen.h for documentation.
 struct nacl_irt_mgl_onscreen {
   void (*MGLResizeSurface)(uint32_t width, uint32_t height);
   void (*MGLSwapBuffers)(void);
@@ -35,7 +35,7 @@ struct nacl_irt_mgl_onscreen {
 
 #define NACL_IRT_MGL_SIGNAL_SYNC_POINT_v0_1 "nacl-irt-mgl-signal-sync-point-0.1"
 
-// See mojo/public/c/gpu/MGL/mgl_signal_sync_point.h for documentation.
+// See mojo/public/c/include/MGL/mgl_signal_sync_point.h for documentation.
 struct nacl_irt_mgl_signal_sync_point {
   void (*MGLSignalSyncPoint)(uint32_t sync_point,
                              MGLSignalSyncPointCallback callback,

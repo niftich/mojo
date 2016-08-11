@@ -5,8 +5,8 @@
 #ifndef MOJO_PUBLIC_PLATFORM_NATIVE_PLATFORM_HANDLE_PRIVATE_H_
 #define MOJO_PUBLIC_PLATFORM_NATIVE_PLATFORM_HANDLE_PRIVATE_H_
 
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/result.h"
+#include <mojo/result.h>
+#include <mojo/system/handle.h>
 
 // |MojoPlatformHandle|: Type for "platform handles", i.e., the underlying OS's
 // handles. Currently this is always just a Unix file descriptor.

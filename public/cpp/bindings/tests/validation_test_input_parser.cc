@@ -13,8 +13,6 @@
 #include <set>
 #include <utility>
 
-#include "mojo/public/c/system/macros.h"
-
 namespace mojo {
 namespace test {
 namespace {

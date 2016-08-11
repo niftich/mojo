@@ -12,9 +12,10 @@
 #ifndef MOJO_PUBLIC_CPP_ENVIRONMENT_LOGGING_H_
 #define MOJO_PUBLIC_CPP_ENVIRONMENT_LOGGING_H_
 
+#include <mojo/environment/logger.h>
+
 #include <sstream>
 
-#include "mojo/public/c/environment/logger.h"
 #include "mojo/public/cpp/environment/environment.h"
 #include "mojo/public/cpp/system/macros.h"
 

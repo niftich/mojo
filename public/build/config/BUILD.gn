@@ -12,5 +12,13 @@ config("mojo_sdk") {
 
     # The same goes for files generated from mojoms.
     root_gen_dir + mojo_root,
+
+    # Mojo C headers should be included as <mojo/...>. The
+    # mojo/public/c:c_config config theoretically makes this work, but this
+    # requires that everyone use public_deps correctly (in order to propagate
+    # the config).
+    # TODO(vtl): Try to fix everyone, so that this isn't necessary. (That, or
+    # consider using all_dependent_configs instead.
+    "$mojo_root/mojo/public/c/include",
   ]
 }

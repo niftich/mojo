@@ -6,9 +6,9 @@
 #define MOJO_PUBLIC_CPP_BINDINGS_STRONG_BINDING_H_
 
 #include <assert.h>
+#include <mojo/environment/async_waiter.h>
+#include <mojo/system/time.h>
 
-#include "mojo/public/c/environment/async_waiter.h"
-#include "mojo/public/c/system/time.h"
 #include "mojo/public/cpp/bindings/binding.h"
 #include "mojo/public/cpp/bindings/callback.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"

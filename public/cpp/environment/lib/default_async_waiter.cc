@@ -5,8 +5,8 @@
 #include "mojo/public/cpp/environment/lib/default_async_waiter.h"
 
 #include <assert.h>
+#include <mojo/environment/async_waiter.h>
 
-#include "mojo/public/c/environment/async_waiter.h"
 #include "mojo/public/cpp/utility/run_loop.h"
 #include "mojo/public/cpp/utility/run_loop_handler.h"
 

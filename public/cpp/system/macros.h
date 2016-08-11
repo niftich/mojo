@@ -4,14 +4,14 @@
 
 // Define a set of C++ specific macros.
 // Mojo C++ API users can assume that mojo/public/cpp/system/macros.h
-// includes mojo/public/c/system/macros.h.
+// includes mojo/public/c/include/mojo/macros.h.
 
 #ifndef MOJO_PUBLIC_CPP_SYSTEM_MACROS_H_
 #define MOJO_PUBLIC_CPP_SYSTEM_MACROS_H_
 
-#include <utility>
+#include <mojo/macros.h>
 
-#include "mojo/public/c/system/macros.h"  // Symbols exposed.
+#include <utility>
 
 // A macro to disallow the copy constructor and operator= functions. This is
 // typically used like:

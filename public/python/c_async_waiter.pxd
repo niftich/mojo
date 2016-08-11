@@ -7,16 +7,16 @@
 from libc.stdint cimport intptr_t, uint32_t, uint64_t
 
 
-cdef extern from "mojo/public/c/system/handle.h" nogil:
+cdef extern from "mojo/system/handle.h" nogil:
   ctypedef uint32_t MojoHandle
   ctypedef uint32_t MojoHandleSignals
 
 
-cdef extern from "mojo/public/c/system/time.h" nogil:
+cdef extern from "mojo/system/time.h" nogil:
   ctypedef uint64_t MojoDeadline
 
 
-cdef extern from "mojo/public/c/environment/async_waiter.h"  nogil:
+cdef extern from "mojo/environment/async_waiter.h" nogil:
   ctypedef intptr_t MojoAsyncWaitID
 
 

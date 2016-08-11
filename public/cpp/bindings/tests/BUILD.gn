@@ -93,8 +93,6 @@ mojo_sdk_source_set("mojo_public_bindings_test_utils") {
     "validation_test_input_parser.cc",
     "validation_test_input_parser.h",
   ]
-
-  mojo_sdk_deps = [ "mojo/public/c/system" ]
 }
 
 # TODO(vardhan): Merge with mojo_public_bindings_test_utils.
@@ -106,10 +104,7 @@ mojo_sdk_source_set("validation_util") {
     "validation_util.h",
   ]
 
-  mojo_sdk_deps = [
-    "mojo/public/c/system",
-    "mojo/public/cpp/test_support",
-  ]
+  mojo_sdk_deps = [ "mojo/public/cpp/test_support" ]
 
   deps = [
     ":mojo_public_bindings_test_utils",

@@ -5,14 +5,14 @@
 #ifndef MOJO_PUBLIC_CPP_SYSTEM_WAIT_H_
 #define MOJO_PUBLIC_CPP_SYSTEM_WAIT_H_
 
+#include <mojo/result.h>
+#include <mojo/system/handle.h>
+#include <mojo/system/time.h>
+#include <mojo/system/wait.h>
 #include <stdint.h>
 
 #include <vector>
 
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/result.h"
-#include "mojo/public/c/system/time.h"
-#include "mojo/public/c/system/wait.h"
 #include "mojo/public/cpp/system/handle.h"
 
 namespace mojo {

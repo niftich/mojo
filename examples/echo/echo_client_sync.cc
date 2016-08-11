@@ -6,8 +6,9 @@
 // is the blocking, synchronous version of mojom interface calls (typically used
 // via InterfacePtr<>).
 
+#include <mojo/system/main.h>
+
 #include "mojo/examples/echo/echo.mojom-sync.h"
-#include "mojo/public/c/system/main.h"
 #include "mojo/public/cpp/application/application_impl_base.h"
 #include "mojo/public/cpp/application/connect.h"
 #include "mojo/public/cpp/application/run_application.h"

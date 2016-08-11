@@ -12,6 +12,7 @@ mojo_sdk_source_set("utility") {
   ]
 
   mojo_sdk_deps = [
+    "mojo/public/c:system",
     "mojo/public/cpp/bindings:callback",
     "mojo/public/cpp/system",
   ]

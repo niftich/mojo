@@ -19,7 +19,7 @@ mojo_sdk_source_set("tests") {
   ]
 
   mojo_sdk_deps = [
-    "mojo/public/c/environment",
+    "mojo/public/c:environment",
     "mojo/public/cpp/bindings:callback",
     "mojo/public/cpp/environment:standalone",
     "mojo/public/cpp/system",
@@ -40,7 +40,7 @@ mojo_sdk_source_set("perftests") {
   ]
 
   mojo_sdk_deps = [
-    "mojo/public/c/environment/tests:perftest_helpers",
+    "mojo/public/c:environment_perftest_helpers",
     "mojo/public/cpp/environment:standalone",
     "mojo/public/cpp/system",
     "mojo/public/cpp/test_support",

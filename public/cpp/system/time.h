@@ -3,12 +3,12 @@
 // found in the LICENSE file.
 
 // This file provides C++ wrappers for the C API in
-// "mojo/public/c/system/time.h".
+// "mojo/public/c/include/mojo/system/time.h".
 
 #ifndef MOJO_PUBLIC_CPP_SYSTEM_TIME_H_
 #define MOJO_PUBLIC_CPP_SYSTEM_TIME_H_
 
-#include "mojo/public/c/system/time.h"
+#include <mojo/system/time.h>
 
 namespace mojo {
 

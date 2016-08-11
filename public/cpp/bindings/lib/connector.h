@@ -5,9 +5,10 @@
 #ifndef MOJO_PUBLIC_CPP_BINDINGS_LIB_CONNECTOR_H_
 #define MOJO_PUBLIC_CPP_BINDINGS_LIB_CONNECTOR_H_
 
-#include "mojo/public/c/environment/async_waiter.h"
-#include "mojo/public/c/system/result.h"
-#include "mojo/public/c/system/time.h"
+#include <mojo/environment/async_waiter.h>
+#include <mojo/result.h>
+#include <mojo/system/time.h>
+
 #include "mojo/public/cpp/bindings/callback.h"
 #include "mojo/public/cpp/bindings/message.h"
 #include "mojo/public/cpp/environment/environment.h"

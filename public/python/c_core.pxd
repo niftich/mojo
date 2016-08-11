@@ -13,7 +13,7 @@ from cpython.buffer cimport PyObject_GetBuffer
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.stdint cimport int32_t, int64_t, uint32_t, uint64_t, uintptr_t
 
-cdef extern from "mojo/public/c/system/result.h" nogil:
+cdef extern from "mojo/result.h" nogil:
   ctypedef int32_t MojoResult
   const MojoResult MOJO_RESULT_OK
   const MojoResult MOJO_RESULT_CANCELLED
@@ -34,7 +34,7 @@ cdef extern from "mojo/public/c/system/result.h" nogil:
   const MojoResult MOJO_RESULT_BUSY
   const MojoResult MOJO_RESULT_SHOULD_WAIT
 
-cdef extern from "mojo/public/c/system/handle.h" nogil:
+cdef extern from "mojo/system/handle.h" nogil:
   ctypedef uint32_t MojoHandle
   const MojoHandle MOJO_HANDLE_INVALID
 
@@ -50,7 +50,7 @@ cdef extern from "mojo/public/c/system/handle.h" nogil:
 
   MojoResult MojoClose(MojoHandle handle)
 
-cdef extern from "mojo/public/c/system/time.h" nogil:
+cdef extern from "mojo/system/time.h" nogil:
   ctypedef int64_t MojoTimeTicks
 
   ctypedef uint64_t MojoDeadline
@@ -58,7 +58,7 @@ cdef extern from "mojo/public/c/system/time.h" nogil:
 
   MojoTimeTicks MojoGetTimeTicksNow()
 
-cdef extern from "mojo/public/c/system/wait.h" nogil:
+cdef extern from "mojo/system/wait.h" nogil:
   MojoResult MojoWait "MojoWait"(MojoHandle handle,
                                  MojoHandleSignals signals,
                                  MojoDeadline deadline,
@@ -70,7 +70,7 @@ cdef extern from "mojo/public/c/system/wait.h" nogil:
                                          uint32_t* result_index,
                                          MojoHandleSignalsState* signals_states)
 
-cdef extern from "mojo/public/c/system/message_pipe.h" nogil:
+cdef extern from "mojo/system/message_pipe.h" nogil:
   ctypedef uint32_t MojoCreateMessagePipeOptionsFlags
   const MojoCreateMessagePipeOptionsFlags MOJO_CREATE_MESSAGE_PIPE_OPTIONS_FLAG_NONE
 
@@ -106,7 +106,7 @@ cdef extern from "mojo/public/c/system/message_pipe.h" nogil:
       uint32_t* num_handles,
       MojoReadMessageFlags flags)
 
-cdef extern from "mojo/public/c/system/data_pipe.h" nogil:
+cdef extern from "mojo/system/data_pipe.h" nogil:
   ctypedef uint32_t MojoCreateDataPipeOptionsFlags
   const MojoCreateDataPipeOptionsFlags MOJO_CREATE_DATA_PIPE_OPTIONS_FLAG_NONE
 
@@ -166,7 +166,7 @@ cdef extern from "mojo/public/c/system/data_pipe.h" nogil:
       MojoHandle data_pipe_consumer_handle,
       uint32_t num_bytes_read)
 
-cdef extern from "mojo/public/c/system/buffer.h" nogil:
+cdef extern from "mojo/system/buffer.h" nogil:
   ctypedef uint32_t MojoCreateSharedBufferOptionsFlags
   const MojoCreateSharedBufferOptionsFlags MOJO_CREATE_SHARED_BUFFER_OPTIONS_FLAG_NONE
 

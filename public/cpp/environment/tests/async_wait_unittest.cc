@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <mojo/environment/async_waiter.h>
+#include <mojo/result.h>
+#include <mojo/system/time.h>
+
 #include <string>
 
-#include "mojo/public/c/environment/async_waiter.h"
-#include "mojo/public/c/system/result.h"
-#include "mojo/public/c/system/time.h"
 #include "mojo/public/cpp/environment/environment.h"
 #include "mojo/public/cpp/system/handle.h"
 #include "mojo/public/cpp/system/macros.h"

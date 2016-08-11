@@ -141,8 +141,8 @@ mod macros {
     }
 }
 
+#[macro_use]
 pub mod bindings;
 pub mod system;
 
 pub use system::MojoResult;
-

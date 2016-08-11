@@ -8,6 +8,8 @@ group("test") {
   deps = [
     # Unit tests:
     ":mojo_public_c_bindings_unittests",
+    ":mojo_public_c_common_unittests",
+    ":mojo_public_c_compile_unittests",
     ":mojo_public_c_system_unittests",
     ":mojo_public_cpp_application_unittests",
     ":mojo_public_cpp_bindings_unittests",
@@ -56,13 +58,27 @@ template("mojo_public_test") {
 mojo_public_test("mojo_public_c_bindings_unittests") {
   deps = [
     ":test_support",
-    "//mojo/public/c/bindings/tests",
+    "//mojo/public/c:bindings_unittests",
+  ]
+}
+
+mojo_public_test("mojo_public_c_common_unittests") {
+  deps = [
+    ":test_support",
+    "//mojo/public/c:common_unittests",
+  ]
+}
+
+mojo_public_test("mojo_public_c_compile_unittests") {
+  deps = [
+    ":test_support",
+    "//mojo/public/c:compile_unittests",
   ]
 }
 
 mojo_public_test("mojo_public_c_system_unittests") {
   deps = [
-    "//mojo/public/c/system/tests",
+    "//mojo/public/c:system_unittests",
   ]
 }
 
@@ -104,7 +120,7 @@ mojo_public_test("mojo_public_cpp_utility_unittests") {
 mojo_public_test("mojo_public_c_system_perftests") {
   deps = [
     ":test_support",
-    "//mojo/public/c/system/tests:perftests",
+    "//mojo/public/c:system_perftests",
   ]
 }
 

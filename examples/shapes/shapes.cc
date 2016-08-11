@@ -8,8 +8,8 @@
 #include <utility>
 
 #include <magenta/syscalls.h>
+#include <mojo/system/main.h>
 
-#include "mojo/public/c/system/main.h"
 #include "mojo/public/cpp/application/application_impl_base.h"
 #include "mojo/public/cpp/application/connect.h"
 #include "mojo/public/cpp/application/run_application.h"

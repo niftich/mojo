@@ -7,8 +7,9 @@
 // Note: This file is for documentation purposes only. The code here is not
 // actually executed. The real module is implemented natively in Mojo.
 //
-// This module provides the JavaScript bindings for mojo/public/c/system/*.h.
-// Refer to those files for more detailed documentation for equivalent methods.
+// This module provides the JavaScript bindings for
+// mojo/public/c/include/mojo/system/*.h. Refer to those files for more detailed
+// documentation for equivalent methods.
 
 while (1);
 

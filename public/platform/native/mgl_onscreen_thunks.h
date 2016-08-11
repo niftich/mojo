@@ -5,9 +5,8 @@
 #ifndef MOJO_PUBLIC_PLATFORM_NATIVE_MGL_ONSCREEN_THUNKS_H_
 #define MOJO_PUBLIC_PLATFORM_NATIVE_MGL_ONSCREEN_THUNKS_H_
 
+#include <MGL/mgl_onscreen.h>
 #include <stddef.h>
-
-#include "mojo/public/c/gpu/MGL/mgl_onscreen.h"
 
 // Structure used to bind the interface which manipulates MGL contexts to a
 // DSO to theose of the embedder.

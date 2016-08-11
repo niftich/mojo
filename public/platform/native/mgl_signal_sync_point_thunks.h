@@ -5,9 +5,8 @@
 #ifndef MOJO_PUBLIC_PLATFORM_NATIVE_MGL_SIGNAL_SYNC_POINT_THUNKS_H_
 #define MOJO_PUBLIC_PLATFORM_NATIVE_MGL_SIGNAL_SYNC_POINT_THUNKS_H_
 
+#include <MGL/mgl_signal_sync_point.h>
 #include <stddef.h>
-
-#include "mojo/public/c/gpu/MGL/mgl_signal_sync_point.h"
 
 // Structure used to bind the MGL signal sync point interface DSO to those
 // of the embedder.

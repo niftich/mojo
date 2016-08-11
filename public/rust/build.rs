@@ -56,9 +56,16 @@ fn main() {
                 None => panic!("Failed to find system_thunks."),
             }
         } else {
+            println!("cargo:rustc-link-lib=stdc++");
+            match search_output(mojo_out_dir, OsStr::new("libvalidation_parser.a")) {
+                Some(path) => {
+                    println!("cargo:rustc-link-lib=static=validation_parser");
+                    println!("cargo:rustc-link-search=native={}", path.display());
+                }
+                None => panic!("Failed to find validation_parser."),
+            }
             match search_output(mojo_out_dir, OsStr::new("librust_embedder.a")) {
                 Some(path) => {
-                    println!("cargo:rustc-link-lib=stdc++");
                     println!("cargo:rustc-link-lib=static=rust_embedder");
                     println!("cargo:rustc-link-search=native={}", path.display());
                 }

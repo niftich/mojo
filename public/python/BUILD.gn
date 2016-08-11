@@ -32,11 +32,13 @@ python_binary_source_set("system_embedded") {
   ]
   configs = [ "../build/config:mojo_sdk" ]
   deps = [
-    "../c/system",
     "../cpp/bindings:callback",
     "../cpp/system",
     "../cpp/utility",
-    "../platform/native:system",
+    "../platform/native:system_thunks",
+  ]
+  public_deps = [
+    "../c:system",
   ]
 }
 
@@ -54,13 +56,13 @@ python_binary_module("mojo_system_impl") {
   configs = [ "../build/config:mojo_sdk" ]
   deps = [
     ":python_common",
-    "../c/environment",
-    "../c/system",
+    "../c:environment",
+    "../c:system",
     "../cpp/bindings:callback",
     "../cpp/environment:standalone",
     "../cpp/system",
     "../cpp/utility",
-    "../platform/native:system",
+    "../platform/native:system_thunks",
   ]
 }
 
@@ -71,7 +73,7 @@ python_binary_source_set("python_common") {
   ]
   configs = [ "../build/config:mojo_sdk" ]
   deps = [
-    "../c/environment:environment",
+    "../c:environment",
     "../cpp/bindings:callback",
     "../cpp/environment:environment",
     "../cpp/system:system",

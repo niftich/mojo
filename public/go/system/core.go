@@ -13,7 +13,7 @@ import (
 var core coreImpl
 
 // Core is an interface giving access to the base operations.
-// See |mojo/public/c/system/*.h| for the underlying API.
+// See |mojo/public/c/include/mojo/system/*.h| for the underlying API.
 type Core interface {
 	// AcquireNativeHandle acquires a handle from the native side. The handle
 	// will be owned by the returned object and must not be closed outside of

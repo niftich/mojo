@@ -5,10 +5,11 @@
 #ifndef MOJO_PUBLIC_CPP_UTILITY_RUN_LOOP_H_
 #define MOJO_PUBLIC_CPP_UTILITY_RUN_LOOP_H_
 
+#include <mojo/system/time.h>
+
 #include <map>
 #include <queue>
 
-#include "mojo/public/c/system/time.h"
 #include "mojo/public/cpp/bindings/callback.h"
 #include "mojo/public/cpp/system/handle.h"
 #include "mojo/public/cpp/system/macros.h"

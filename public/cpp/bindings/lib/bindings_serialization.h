@@ -5,9 +5,10 @@
 #ifndef MOJO_PUBLIC_CPP_BINDINGS_LIB_BINDINGS_SERIALIZATION_H_
 #define MOJO_PUBLIC_CPP_BINDINGS_LIB_BINDINGS_SERIALIZATION_H_
 
+#include <mojo/system/handle.h>
+
 #include <vector>
 
-#include "mojo/public/c/system/handle.h"
 #include "mojo/public/cpp/bindings/lib/bindings_internal.h"
 #include "mojo/public/cpp/system/handle.h"
 

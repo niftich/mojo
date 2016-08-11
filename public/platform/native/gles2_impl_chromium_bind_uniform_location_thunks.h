@@ -14,7 +14,7 @@
 #include <stddef.h>
 
 #define GL_GLEXT_PROTOTYPES
-#include "mojo/public/c/gpu/GLES2/gl2extmojo.h"
+#include <GLES2/gl2extmojo.h>
 
 // Specifies the frozen API for the CHROMIUM_bind_uniform_location extension.
 #pragma pack(push, 8)

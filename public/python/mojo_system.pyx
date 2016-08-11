@@ -35,7 +35,7 @@ def SetSystemThunks(system_thunks_as_object):
 
 HANDLE_INVALID = c_core.MOJO_HANDLE_INVALID
 # TODO(vtl): Find a way of supporting the new, more flexible/extensible
-# MojoResult (see mojo/public/c/syste/result.h).
+# MojoResult (see mojo/public/c/include/mojo/result.h).
 RESULT_OK = c_core.MOJO_RESULT_OK
 RESULT_CANCELLED = c_core.MOJO_RESULT_CANCELLED
 RESULT_UNKNOWN = c_core.MOJO_RESULT_UNKNOWN
@@ -77,7 +77,7 @@ _WAITMANY_NO_SIGNAL_STATE_ERRORS = [RESULT_INVALID_ARGUMENT,
 def GetTimeTicksNow():
   """Monotonically increasing tick count representing "right now."
 
-  See mojo/public/c/system/time.h
+  See mojo/public/c/include/mojo/system/time.h
   """
   return c_core.MojoGetTimeTicksNow()
 
@@ -205,7 +205,7 @@ def WaitMany(handles_and_signals, deadline):
   Args:
     handles_and_signals: list of tuples of handle and signal.
 
-  See mojo/public/c/system/wait.h
+  See mojo/public/c/include/mojo/system/wait.h
   """
   cdef uint32_t length = len(handles_and_signals)
   cdef uint32_t result_index = <uint32_t>(-1)
@@ -345,7 +345,7 @@ cdef class Handle(object):
   def Close(self):
     """Closes this handle.
 
-    See mojo/public/c/system/handle.h
+    See mojo/public/c/include/mojo/system/handle.h
     """
     cdef c_core.MojoResult result = c_core.MOJO_RESULT_OK
     if self.IsValid():
@@ -359,7 +359,7 @@ cdef class Handle(object):
   def Wait(self, signals, deadline):
     """Waits on the given handle.
 
-    See mojo/public/c/system/wait.h
+    See mojo/public/c/include/mojo/system/wait.h
     """
     cdef c_core.MojoHandle handle = self._mojo_handle
     cdef c_core.MojoHandleSignals csignals = signals
@@ -397,7 +397,7 @@ cdef class Handle(object):
 
     This method can only be used on a handle obtained from |MessagePipe()|.
 
-    See mojo/public/c/system/message_pipe.h
+    See mojo/public/c/include/mojo/system/message_pipe.h
     """
     cdef _ScopedBuffer buffer_as_buffer = _ScopedBuffer(buffer)
     cdef uint32_t input_buffer_length = buffer_as_buffer.len
@@ -441,7 +441,7 @@ cdef class Handle(object):
       message.
     - if code is any other value, data and sizes will be None.
 
-    See mojo/public/c/system/message_pipe.h
+    See mojo/public/c/include/mojo/system/message_pipe.h
     """
     cdef _ScopedBuffer buffer_as_buffer = _ScopedBuffer(buffer, PyBUF_CONTIG)
     cdef uint32_t input_buffer_length = buffer_as_buffer.len
@@ -480,7 +480,7 @@ cdef class Handle(object):
     - If code is RESULT_OK, num_bytes is the number of written bytes.
     - Otherwise, num_bytes is None.
 
-    See mojo/public/c/system/data_pipe.h
+    See mojo/public/c/include/mojo/system/data_pipe.h
     """
     cdef _ScopedBuffer buffer_as_buffer = _ScopedBuffer(buffer)
     cdef uint32_t input_buffer_length = buffer_as_buffer.len
@@ -505,7 +505,7 @@ cdef class Handle(object):
       DataPipeTwoPhaseBuffer
     - Otherwise, two_phase_buffer is None.
 
-    See mojo/public/c/system/data_pipe.h
+    See mojo/public/c/include/mojo/system/data_pipe.h
     """
     cdef void* out_buffer
     cdef uint32_t out_size = 0
@@ -530,7 +530,7 @@ cdef class Handle(object):
       read data.
     - otherwise, buffer will be None.
 
-    See mojo/public/c/system/data_pipe.h
+    See mojo/public/c/include/mojo/system/data_pipe.h
     """
     cdef _ScopedBuffer buffer_as_buffer = _ScopedBuffer(buffer)
     cdef uint32_t input_buffer_length = buffer_as_buffer.len
@@ -553,7 +553,7 @@ cdef class Handle(object):
       the data pipe consumer.
     - otherwise, num_bytes will be None.
 
-    See mojo/public/c/system/data_pipe.h
+    See mojo/public/c/include/mojo/system/data_pipe.h
     """
     cdef uint32_t num_bytes = 0
     cdef c_core.MojoResult res = c_core.MojoReadData(
@@ -575,7 +575,7 @@ cdef class Handle(object):
       DataPipeTwoPhaseBuffer
     - Otherwise, two_phase_buffer is None.
 
-    See mojo/public/c/system/data_pipe.h
+    See mojo/public/c/include/mojo/system/data_pipe.h
     """
     cdef const void* out_buffer
     cdef uint32_t out_size = 0
@@ -595,7 +595,7 @@ cdef class Handle(object):
     This method can only be used on a handle obtained from
     |CreateSharedBuffer()| or |Duplicate()|.
 
-    See mojo/public/c/system/buffer.h
+    See mojo/public/c/include/mojo/system/buffer.h
     """
     cdef c_core.MojoDuplicateBufferHandleOptions coptions
     cdef c_core.MojoDuplicateBufferHandleOptions* coptions_ptr = NULL
@@ -622,7 +622,7 @@ cdef class Handle(object):
       MappedBuffer
     - Otherwise, mapped_buffer is None.
 
-    See mojo/public/c/system/buffer.h
+    See mojo/public/c/include/mojo/system/buffer.h
     """
     cdef void* buffer
     res = c_core.MojoMapBuffer(self._mojo_handle,
@@ -641,7 +641,7 @@ cdef class Handle(object):
 class CreateMessagePipeOptions(object):
   """Options for creating a message pipe.
 
-  See mojo/public/c/system/message_pipe.h
+  See mojo/public/c/include/mojo/system/message_pipe.h
   """
   FLAG_NONE = c_core.MOJO_CREATE_MESSAGE_PIPE_OPTIONS_FLAG_NONE
 
@@ -654,7 +654,7 @@ class MessagePipe(object):
   The two ends of the message pipe are accessible with the members handle0 and
   handle1.
 
-  See mojo/public/c/system/message_pipe.h
+  See mojo/public/c/include/mojo/system/message_pipe.h
   """
   def __init__(self, options=None):
     cdef c_core.MojoCreateMessagePipeOptions coptions
@@ -677,7 +677,7 @@ class MessagePipe(object):
 class CreateDataPipeOptions(object):
   """Options for creating a data pipe.
 
-  See mojo/public/c/system/data_pipe.h
+  See mojo/public/c/include/mojo/system/data_pipe.h
   """
   FLAG_NONE = c_core.MOJO_CREATE_DATA_PIPE_OPTIONS_FLAG_NONE
 
@@ -693,7 +693,7 @@ class DataPipe(object):
   producer_handle and the consumer end of the data pipe is accessible with the
   member cconsumer_handle.
 
-  See mojo/public/c/system/data_pipe.h
+  See mojo/public/c/include/mojo/system/data_pipe.h
   """
   def __init__(self, options=None):
     cdef c_core.MojoCreateDataPipeOptions coptions
@@ -717,7 +717,7 @@ class DataPipe(object):
 class CreateSharedBufferOptions(object):
   """Options for creating a shared buffer.
 
-  See mojo/public/c/system/buffer.h
+  See mojo/public/c/include/mojo/system/buffer.h
   """
   FLAG_NONE = c_core.MOJO_CREATE_SHARED_BUFFER_OPTIONS_FLAG_NONE
 
@@ -727,7 +727,7 @@ class CreateSharedBufferOptions(object):
 def CreateSharedBuffer(num_bytes, options=None):
   """Creates a buffer of size |num_bytes| bytes that can be shared.
 
-  See mojo/public/c/system/buffer.h
+  See mojo/public/c/include/mojo/system/buffer.h
   """
   cdef c_core.MojoCreateSharedBufferOptions coptions
   cdef c_core.MojoCreateSharedBufferOptions* coptions_ptr = NULL
@@ -747,7 +747,7 @@ def CreateSharedBuffer(num_bytes, options=None):
 class DuplicateSharedBufferOptions(object):
   """Options for duplicating a shared buffer.
 
-  See mojo/public/c/system/buffer.h
+  See mojo/public/c/include/mojo/system/buffer.h
   """
   FLAG_NONE = c_core.MOJO_DUPLICATE_BUFFER_HANDLE_OPTIONS_FLAG_NONE
 

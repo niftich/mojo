@@ -5,13 +5,13 @@
 #ifndef MOJO_PUBLIC_PLATFORM_NACL_MOJO_IRT_H_
 #define MOJO_PUBLIC_PLATFORM_NACL_MOJO_IRT_H_
 
-#include "mojo/public/c/system/buffer.h"
-#include "mojo/public/c/system/data_pipe.h"
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/message_pipe.h"
-#include "mojo/public/c/system/result.h"
-#include "mojo/public/c/system/time.h"
-#include "mojo/public/c/system/wait_set.h"
+#include <mojo/result.h>
+#include <mojo/system/buffer.h>
+#include <mojo/system/data_pipe.h>
+#include <mojo/system/handle.h>
+#include <mojo/system/message_pipe.h>
+#include <mojo/system/time.h>
+#include <mojo/system/wait_set.h>
 
 #define NACL_IRT_MOJO_v0_1 "nacl-irt-mojo-0.1"
 

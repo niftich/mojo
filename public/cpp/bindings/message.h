@@ -148,8 +148,8 @@ class MessageReceiverWithResponderStatus : public MessageReceiver {
 // and handles).
 //
 // This method calls into |MojoReadMessage()| and propagates any errors it
-// produces. See mojo/public/c/system/message_pipe.h for a description of its
-// possible return values.
+// produces. See mojo/public/c/include/mojo/system/message_pipe.h for a
+// description of its possible return values.
 //
 // NOTE: The message isn't validated and may be malformed!
 MojoResult ReadMessage(MessagePipeHandle handle, Message* message);
@@ -161,8 +161,8 @@ MojoResult ReadMessage(MessagePipeHandle handle, Message* message);
 // value.
 //
 // This method calls into |MojoReadMessage()| and propagates any errors it
-// produces. See mojo/public/c/system/message_pipe.h for a description of its
-// possible return values.
+// produces. See mojo/public/c/include/mojo/system/message_pipe.h for a
+// description of its possible return values.
 MojoResult ReadAndDispatchMessage(MessagePipeHandle handle,
                                   MessageReceiver* receiver,
                                   bool* receiver_result);

@@ -8,7 +8,7 @@ source_set("impl") {
   ]
 
   deps = [
-    "//mojo/public/c/system",
+    "//mojo/public/c:system",
   ]
 
   cflags = [ "-Werror", "-Wsign-conversion" ]
@@ -23,6 +23,6 @@ static_library("system") {
 
   deps = [
     ":impl",
-    "//mojo/public/c/system",
+    "//mojo/public/c:system",
   ]
 }

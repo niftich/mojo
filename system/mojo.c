@@ -4,15 +4,14 @@
 
 #include <assert.h>
 #include <magenta/syscalls.h>
+#include <mojo/system/buffer.h>
+#include <mojo/system/data_pipe.h>
+#include <mojo/system/handle.h>
+#include <mojo/system/message_pipe.h>
+#include <mojo/system/wait.h>
+#include <mojo/system/wait_set.h>
 #include <stddef.h>
 #include <string.h>
-
-#include "mojo/public/c/system/buffer.h"
-#include "mojo/public/c/system/data_pipe.h"
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/message_pipe.h"
-#include "mojo/public/c/system/wait.h"
-#include "mojo/public/c/system/wait_set.h"
 
 // MojoTimeTicks is in microseconds.
 // mx_time_t is in nanoseconds.

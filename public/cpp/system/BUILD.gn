@@ -15,5 +15,5 @@ mojo_sdk_source_set("system") {
     "wait.h",
   ]
 
-  mojo_sdk_public_deps = [ "mojo/public/c/system" ]
+  mojo_sdk_public_deps = [ "mojo/public/c:system" ]
 }

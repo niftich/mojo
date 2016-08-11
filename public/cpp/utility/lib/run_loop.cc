@@ -5,6 +5,7 @@
 #include "mojo/public/cpp/utility/run_loop.h"
 
 #include <assert.h>
+#include <mojo/macros.h>
 #include <pthread.h>
 
 #include <algorithm>
@@ -12,7 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include "mojo/public/c/system/macros.h"
 #include "mojo/public/cpp/system/time.h"
 #include "mojo/public/cpp/system/wait.h"
 #include "mojo/public/cpp/utility/run_loop_handler.h"

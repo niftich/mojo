@@ -5,9 +5,8 @@
 #ifndef MOJO_PUBLIC_PLATFORM_NATIVE_GLES2_IMPL_THUNKS_H_
 #define MOJO_PUBLIC_PLATFORM_NATIVE_GLES2_IMPL_THUNKS_H_
 
+#include <GLES2/gl2.h>
 #include <stddef.h>
-
-#include "mojo/public/c/gpu/GLES2/gl2.h"
 
 // Like MojoGLES2ControlThunks, but specifies the frozen GLES2 API. Separated
 // out as MojoGLES2ControlThunks may be modified and added to, but this

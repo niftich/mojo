@@ -6,17 +6,17 @@
 // replacing the prefix of "Mojo" with a "mojo" namespace, and using more
 // strongly-typed representations of |MojoHandle|s.
 //
-// Please see "mojo/public/c/system/wait_set.h" for complete documentation of
-// the API.
+// Please see "mojo/public/c/include/mojo/system/wait_set.h" for complete
+// documentation of the API.
 
 #ifndef MOJO_PUBLIC_CPP_SYSTEM_WAIT_SET_H_
 #define MOJO_PUBLIC_CPP_SYSTEM_WAIT_SET_H_
 
 #include <assert.h>
+#include <mojo/system/wait_set.h>
 
 #include <vector>
 
-#include "mojo/public/c/system/wait_set.h"
 #include "mojo/public/cpp/system/handle.h"
 
 namespace mojo {

@@ -5,9 +5,8 @@
 #ifndef MOJO_PUBLIC_PLATFORM_NATIVE_MGL_ECHO_THUNKS_H_
 #define MOJO_PUBLIC_PLATFORM_NATIVE_MGL_ECHO_THUNKS_H_
 
+#include <MGL/mgl_echo.h>
 #include <stddef.h>
-
-#include "mojo/public/c/gpu/MGL/mgl_echo.h"
 
 // Structure used to bind the MGL echo interface DSO to those of the embedder.
 //

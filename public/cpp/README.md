@@ -44,8 +44,8 @@ System
 ------
 
 The system/ subdirectory contains C++ wrappers (and some additional helpers) of
-the API defined in mojo/public/c/system/, which defines the basic, "core" API,
-especially used to communicate with Mojo services.
+the API defined in mojo/public/c/include/mojo/system/, which defines the basic,
+"core" API, especially used to communicate with Mojo services.
 
 Test Support
 ------------

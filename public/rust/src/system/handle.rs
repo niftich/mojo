@@ -88,6 +88,20 @@ impl Handle for UntypedHandle {
     }
 }
 
+impl CastHandle for UntypedHandle {
+    /// Casting an untyped handle is a no-op, but we include
+    /// this to eliminate code duplication.
+    unsafe fn from_untyped(handle: UntypedHandle) -> Self {
+        handle
+    }
+
+    /// Casting to an untyped handle is a no-op, but we include
+    /// this to eliminate code duplication.
+    fn as_untyped(self) -> UntypedHandle {
+        self
+    }
+}
+
 impl Drop for UntypedHandle {
     /// The destructor for an untyped handle which closes the native handle
     /// it wraps.

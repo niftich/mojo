@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 
-#include "mojo/public/c/system/macros.h"
 #include "mojo/public/cpp/bindings/binding.h"
+#include "mojo/public/cpp/system/macros.h"
 
 namespace mojo {
 

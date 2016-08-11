@@ -6,12 +6,12 @@
 #define MOJO_PUBLIC_CPP_SYSTEM_HANDLE_H_
 
 #include <assert.h>
+#include <mojo/result.h>
+#include <mojo/system/handle.h>
 #include <stdint.h>
 
 #include <limits>
 
-#include "mojo/public/c/system/handle.h"
-#include "mojo/public/c/system/result.h"
 #include "mojo/public/cpp/system/macros.h"
 
 namespace mojo {
@@ -50,8 +50,8 @@ namespace mojo {
 // Wrapper functions:
 //
 // We provide simple wrappers for the |Mojo...()| functions (declared in various
-// mojo/public/c/system/*.h -- see those file for details on individual
-// functions).
+// mojo/public/c/include/mojo/system/*.h -- see those file for details on
+// individual functions).
 //
 // The general guideline is functions that imply ownership transfer of a handle
 // should take (or produce) an appropriate |Scoped...Handle|, while those that

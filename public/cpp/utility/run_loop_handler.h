@@ -5,9 +5,9 @@
 #ifndef MOJO_PUBLIC_CPP_UTILITY_RUN_LOOP_HANDLER_H_
 #define MOJO_PUBLIC_CPP_UTILITY_RUN_LOOP_HANDLER_H_
 
+#include <mojo/result.h>
 #include <stdint.h>
 
-#include "mojo/public/c/system/result.h"
 #include "mojo/public/cpp/system/handle.h"
 
 namespace mojo {
